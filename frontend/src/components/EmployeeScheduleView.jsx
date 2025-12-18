@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import Card from './common/Card';
 import Button from './common/Button';
 import Modal from './common/Modal';
@@ -20,6 +20,9 @@ const EmployeeScheduleView = ({ employeeId }) => {
 
   useEffect(() => {
     loadSchedules();
+    // Refresh schedules every 30 seconds to catch manager updates
+    const interval = setInterval(loadSchedules, 30000);
+    return () => clearInterval(interval);
   }, [weekStart, weekEnd]);
 
   const loadSchedules = async () => {
@@ -169,9 +172,19 @@ const EmployeeScheduleView = ({ employeeId }) => {
 
       {/* Date Range Selector */}
       <Card>
-        <div className="flex items-center gap-4 mb-4">
-          <Calendar size={24} className="text-blue-600" />
-          <h3 className="text-lg font-bold">My Schedule</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <Calendar size={24} className="text-blue-600" />
+            <h3 className="text-lg font-bold">My Schedule</h3>
+          </div>
+          <button
+            onClick={loadSchedules}
+            className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+            title="Refresh schedules"
+          >
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
         </div>
         <div className="flex gap-4 items-end">
           <div>

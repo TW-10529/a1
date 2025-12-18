@@ -7,6 +7,7 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
 import CheckInOut from '../components/CheckInOut';
+import OvertimeRequest from '../components/OvertimeRequest';
 import {
   listLeaveRequests,
   listEmployees,
@@ -684,8 +685,8 @@ const EmployeeAttendance = () => {
       // Calculate real statistics from attendance data
       let present = 0, late = 0, absent = 0;
       response.data.forEach(record => {
-        if (record.check_in_time) {
-          if (record.check_in_status === 'on-time') present++;
+        if (record.in_time) {
+          if (record.status === 'onTime') present++;
           else late++;
         } else {
           absent++;
@@ -782,19 +783,19 @@ const EmployeeAttendance = () => {
                         {record.schedule ? `${record.schedule.start_time} - ${record.schedule.end_time}` : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {record.check_in_time ? format(new Date(record.check_in_time), 'HH:mm') : '-'}
+                        {record.in_time ? record.in_time : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {record.check_out_time ? format(new Date(record.check_out_time), 'HH:mm') : '-'}
+                        {record.out_time ? record.out_time : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          record.check_in_status === 'on-time' ? 'bg-green-100 text-green-800' :
-                          record.check_in_status === 'slightly-late' ? 'bg-yellow-100 text-yellow-800' :
-                          record.check_in_status === 'late' ? 'bg-orange-100 text-orange-800' :
+                          record.status === 'onTime' ? 'bg-green-100 text-green-800' :
+                          record.status === 'slightlyLate' ? 'bg-yellow-100 text-yellow-800' :
+                          record.status === 'late' ? 'bg-orange-100 text-orange-800' :
                           'bg-blue-100 text-blue-800'
                         }`}>
-                          {record.check_in_status || 'Scheduled'}
+                          {record.status || 'Scheduled'}
                         </span>
                       </td>
                     </tr>
@@ -1235,6 +1236,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
             <Route path="/schedule" element={<EmployeeSchedule />} />
             <Route path="/leaves" element={<EmployeeLeaves user={user} />} />
             <Route path="/requests" element={<EmployeeRequests user={user} />} />
+            <Route path="/overtime-requests" element={<OvertimeRequest />} />
             <Route path="/attendance" element={<EmployeeAttendance />} />
             <Route path="/messages" element={<EmployeeMessages />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

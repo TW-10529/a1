@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, RefreshCw } from 'lucide-react';
 import { format, addDays, startOfWeek, isToday, addWeeks, subWeeks } from 'date-fns';
 
 const ManagerScheduleView = ({ user }) => {
@@ -18,6 +18,9 @@ const ManagerScheduleView = ({ user }) => {
 
   useEffect(() => {
     loadData();
+    // Refresh schedule data every 30 seconds to catch updates
+    const interval = setInterval(loadData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
@@ -266,6 +269,14 @@ const ManagerScheduleView = ({ user }) => {
               <ChevronRight size={20} />
             </button>
           </div>
+          <button
+            onClick={loadData}
+            className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+            title="Refresh schedule data"
+          >
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
         </div>
 
         {/* Calendar Table */}

@@ -25,7 +25,8 @@ from app.database import get_db
 from app.models import (
     User, Department, Manager, Employee, Role, Schedule, LeaveRequest,
     CheckInOut, Message, Notification,
-    UserType, LeaveStatus, Attendance, Unavailability, Shift
+    UserType, LeaveStatus, Attendance, Unavailability, Shift,
+    OvertimeTracking, OvertimeRequest, OvertimeWorked, OvertimeStatus
 )
 from app.schemas import *
 from app.auth import (
@@ -1139,7 +1140,7 @@ async def check_in(
         
         db.add(check_in)
         await db.commit()
-        await db.refresh(check_in)
+        await db.refresh(check_in, ['employee', 'schedule'])
         
         return check_in
     except HTTPException:
@@ -1191,6 +1192,78 @@ async def check_out(
         await db.commit()
         await db.refresh(check_in, ['employee', 'schedule'])
 
+        # Create or update Attendance record with overtime calculation
+        try:
+            # Find existing attendance record
+            att_result = await db.execute(
+                select(Attendance).filter(
+                    Attendance.employee_id == employee.id,
+                    Attendance.date == today
+                )
+            )
+            attendance = att_result.scalar_one_or_none()
+            
+            if not attendance:
+                # Create new attendance record
+                attendance = Attendance(
+                    employee_id=employee.id,
+                    schedule_id=check_in.schedule_id,
+                    date=today,
+                    in_time=check_in.check_in_time.strftime("%H:%M") if check_in.check_in_time else None,
+                    out_time=check_in.check_out_time.strftime("%H:%M") if check_in.check_out_time else None,
+                    status=check_in.check_in_status or "onTime"
+                )
+            else:
+                # Update existing attendance record
+                attendance.out_time = check_in.check_out_time.strftime("%H:%M") if check_in.check_out_time else None
+            
+            # Calculate worked hours and overtime
+            if check_in.check_in_time and check_in.check_out_time:
+                total_minutes = (check_in.check_out_time - check_in.check_in_time).total_seconds() / 60
+                
+                # Get break minutes from role
+                break_minutes = 0
+                if check_in.schedule and check_in.schedule.role:
+                    break_minutes = check_in.schedule.role.break_minutes or 0
+                
+                worked_minutes = max(0, total_minutes - break_minutes)
+                worked_hours = worked_minutes / 60
+                
+                attendance.worked_hours = round(worked_hours, 2)
+                attendance.break_minutes = break_minutes
+                
+                # Calculate overtime considering approved overtime
+                if check_in.schedule and worked_hours > employee.daily_max_hours:
+                    actual_overtime = worked_hours - employee.daily_max_hours
+                    
+                    # Get approved overtime for this date if exists
+                    approved_ot_result = await db.execute(
+                        select(OvertimeRequest).filter(
+                            OvertimeRequest.employee_id == employee.id,
+                            OvertimeRequest.request_date == today,
+                            OvertimeRequest.status == OvertimeStatus.APPROVED
+                        )
+                    )
+                    overtime_request = approved_ot_result.scalar_one_or_none()
+                    
+                    if overtime_request:
+                        # Use minimum of actual overtime and approved overtime
+                        overtime_hours = min(actual_overtime, overtime_request.request_hours)
+                        attendance.overtime_hours = round(overtime_hours, 2)
+                    else:
+                        # No approved overtime, show actual overtime worked
+                        attendance.overtime_hours = round(actual_overtime, 2)
+                else:
+                    attendance.overtime_hours = 0.0
+            
+            db.add(attendance)
+            await db.commit()
+        except Exception as e:
+            print(f"Error creating attendance record: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            # Don't fail the checkout, just log the error
+        
         return check_in
     except HTTPException:
         raise
@@ -1201,8 +1274,71 @@ async def check_out(
         raise HTTPException(status_code=500, detail=f"Check-out failed: {str(e)}")
 
 
+@app.post("/attendance/record")
+async def record_attendance(
+    attendance_data: dict,
+    current_user: User = Depends(require_employee),
+    db: AsyncSession = Depends(get_db)
+):
+    """Record attendance for a schedule (check-in)"""
+    try:
+        today = date.today()
+        
+        # Get employee by user_id
+        result = await db.execute(
+            select(Employee).filter(Employee.user_id == current_user.id)
+        )
+        employee = result.scalar_one_or_none()
+        
+        if not employee:
+            raise HTTPException(status_code=400, detail="Employee record not found")
+        
+        # Get schedule
+        schedule_id = attendance_data.get('schedule_id')
+        schedule_result = await db.execute(
+            select(Schedule).filter(Schedule.id == schedule_id)
+        )
+        schedule = schedule_result.scalar_one_or_none()
+        
+        if not schedule:
+            raise HTTPException(status_code=400, detail="Schedule not found")
+        
+        # Create attendance record
+        attendance = Attendance(
+            employee_id=employee.id,
+            schedule_id=schedule_id,
+            date=today,
+            in_time=attendance_data.get('in_time'),
+            status=attendance_data.get('status', 'onTime'),
+            break_minutes=schedule.role.break_minutes if schedule.role else 0
+        )
+        
+        db.add(attendance)
+        await db.commit()
+        await db.refresh(attendance)
+        
+        return {
+            "id": attendance.id,
+            "employee_id": attendance.employee_id,
+            "schedule_id": attendance.schedule_id,
+            "date": attendance.date,
+            "in_time": attendance.in_time,
+            "out_time": attendance.out_time,
+            "status": attendance.status,
+            "worked_hours": attendance.worked_hours,
+            "overtime_hours": attendance.overtime_hours,
+            "message": "Attendance recorded successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Attendance record error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+
 # Attendance Management
-@app.get("/attendance", response_model=List[CheckInResponse])
+@app.get("/attendance", response_model=List[AttendanceResponse])
 async def get_attendance(
     start_date: date = None,
     end_date: date = None,
@@ -1211,9 +1347,9 @@ async def get_attendance(
     db: AsyncSession = Depends(get_db)
 ):
     """Get attendance records with optional filters"""
-    query = select(CheckInOut).options(
-        selectinload(CheckInOut.employee).selectinload(Employee.user),
-        selectinload(CheckInOut.schedule).selectinload(Schedule.role)
+    query = select(Attendance).options(
+        selectinload(Attendance.employee),
+        selectinload(Attendance.schedule).selectinload(Schedule.role)
     )
 
     # Role-based filtering
@@ -1224,7 +1360,7 @@ async def get_attendance(
         )
         employee = emp_result.scalar_one_or_none()
         if employee:
-            query = query.filter(CheckInOut.employee_id == employee.id)
+            query = query.filter(Attendance.employee_id == employee.id)
         else:
             return []
     elif current_user.user_type == UserType.MANAGER:
@@ -1232,20 +1368,20 @@ async def get_attendance(
         manager_dept = await get_manager_department(current_user, db)
         if manager_dept:
             subquery = select(Employee.id).filter(Employee.department_id == manager_dept)
-            query = query.filter(CheckInOut.employee_id.in_(subquery))
+            query = query.filter(Attendance.employee_id.in_(subquery))
         else:
             return []
 
     # Additional filters
     if employee_id and current_user.user_type != UserType.EMPLOYEE:
-        query = query.filter(CheckInOut.employee_id == employee_id)
+        query = query.filter(Attendance.employee_id == employee_id)
 
     if start_date:
-        query = query.filter(CheckInOut.date >= start_date)
+        query = query.filter(Attendance.date >= start_date)
     if end_date:
-        query = query.filter(CheckInOut.date <= end_date)
+        query = query.filter(Attendance.date <= end_date)
 
-    result = await db.execute(query.order_by(CheckInOut.date.desc()))
+    result = await db.execute(query.order_by(Attendance.date.desc()))
     return result.scalars().all()
 
 
@@ -1421,13 +1557,13 @@ async def export_monthly_attendance(
         # Title
         ws['A1'] = f"{department.name} - Monthly Attendance Report"
         ws['A1'].font = Font(bold=True, size=14)
-        ws.merge_cells('A1:F1')
+        ws.merge_cells('A1:J1')
         
-        ws['A2'] = f"December 2025"  # Simplified to avoid datetime issues
-        ws.merge_cells('A2:F2')
+        ws['A2'] = f"December 2025"
+        ws.merge_cells('A2:J2')
         
         # Headers
-        headers = ['Employee ID', 'Name', 'Date', 'Check-In', 'Check-Out', 'Status']
+        headers = ['Employee ID', 'Name', 'Date', 'Assigned Shift', 'Total Hrs Assigned', 'Check-In', 'Check-Out', 'Total Hrs Worked', 'Break Time', 'Status']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=4, column=col)
             cell.value = header
@@ -1436,19 +1572,56 @@ async def export_monthly_attendance(
             cell.alignment = Alignment(horizontal='center', vertical='center')
             cell.border = border
         
+        # Get schedules for shift information
+        sched_result = await db.execute(
+            select(Schedule).filter(
+                Schedule.employee_id.in_([e.id for e in employees]) if employees else False,
+                Schedule.date >= start_date,
+                Schedule.date <= end_date
+            )
+        )
+        schedules = sched_result.scalars().all()
+        schedule_map = {}
+        for sched in schedules:
+            schedule_map[(sched.employee_id, sched.date)] = sched
+        
         # Data
         row = 5
         for record in attendance_records:
             employee = next((e for e in employees if e.id == record.employee_id), None)
             if employee:
+                schedule = schedule_map.get((record.employee_id, record.date))
+                total_hrs_assigned = '-'
+                assigned_shift = '-'
+                if schedule and schedule.start_time and schedule.end_time:
+                    assigned_shift = f"{schedule.start_time} - {schedule.end_time}"
+                    try:
+                        start_h, start_m = map(int, schedule.start_time.split(':'))
+                        end_h, end_m = map(int, schedule.end_time.split(':'))
+                        start_decimal = start_h + start_m / 60
+                        end_decimal = end_h + end_m / 60
+                        hours = end_decimal - start_decimal if end_decimal > start_decimal else 24 - start_decimal + end_decimal
+                        total_hrs_assigned = f"{hours:.2f}"
+                    except:
+                        pass
+                total_hrs_worked = '-'
+                if record.check_in_time and record.check_out_time:
+                    try:
+                        diff = (record.check_out_time - record.check_in_time).total_seconds() / 3600
+                        total_hrs_worked = f"{diff:.2f}"
+                    except:
+                        pass
                 ws.cell(row=row, column=1).value = employee.employee_id
                 ws.cell(row=row, column=2).value = f"{employee.first_name} {employee.last_name}"
                 ws.cell(row=row, column=3).value = record.date.isoformat()
-                ws.cell(row=row, column=4).value = record.check_in_time.strftime('%H:%M:%S') if record.check_in_time else '-'
-                ws.cell(row=row, column=5).value = record.check_out_time.strftime('%H:%M:%S') if record.check_out_time else '-'
-                ws.cell(row=row, column=6).value = record.check_in_status or '-'
-                
-                for col in range(1, 7):
+                ws.cell(row=row, column=4).value = assigned_shift
+                ws.cell(row=row, column=5).value = total_hrs_assigned
+                ws.cell(row=row, column=6).value = record.check_in_time.strftime('%H:%M:%S') if record.check_in_time else '-'
+                ws.cell(row=row, column=7).value = record.check_out_time.strftime('%H:%M:%S') if record.check_out_time else '-'
+                ws.cell(row=row, column=8).value = total_hrs_worked
+                ws.cell(row=row, column=9).value = '1'
+                ws.cell(row=row, column=10).value = record.check_in_status or '-'
+                for col in range(1, 11):
                     ws.cell(row=row, column=col).border = border
                 row += 1
         
@@ -1456,9 +1629,13 @@ async def export_monthly_attendance(
         ws.column_dimensions['A'].width = 12
         ws.column_dimensions['B'].width = 20
         ws.column_dimensions['C'].width = 12
-        ws.column_dimensions['D'].width = 12
-        ws.column_dimensions['E'].width = 12
+        ws.column_dimensions['D'].width = 18
+        ws.column_dimensions['E'].width = 16
         ws.column_dimensions['F'].width = 12
+        ws.column_dimensions['G'].width = 12
+        ws.column_dimensions['H'].width = 14
+        ws.column_dimensions['I'].width = 12
+        ws.column_dimensions['J'].width = 12
         
         # Save to bytes
         file_bytes = io.BytesIO()
@@ -1538,13 +1715,13 @@ async def export_weekly_attendance(
         # Title
         ws['A1'] = f"{department.name} - Weekly Attendance Report"
         ws['A1'].font = Font(bold=True, size=14)
-        ws.merge_cells('A1:F1')
+        ws.merge_cells('A1:J1')
         
         ws['A2'] = f"{start_date.isoformat()} to {end_date.isoformat()}"
-        ws.merge_cells('A2:F2')
+        ws.merge_cells('A2:J2')
         
         # Headers
-        headers = ['Employee ID', 'Name', 'Date', 'Check-In', 'Check-Out', 'Status']
+        headers = ['Employee ID', 'Name', 'Date', 'Assigned Shift', 'Total Hrs Assigned', 'Check-In', 'Check-Out', 'Total Hrs Worked', 'Break Time', 'Status']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=4, column=col)
             cell.value = header
@@ -1553,19 +1730,56 @@ async def export_weekly_attendance(
             cell.alignment = Alignment(horizontal='center', vertical='center')
             cell.border = border
         
+        # Get schedules for shift information
+        sched_result = await db.execute(
+            select(Schedule).filter(
+                Schedule.employee_id.in_([e.id for e in employees]) if employees else False,
+                Schedule.date >= start_date,
+                Schedule.date <= end_date
+            )
+        )
+        schedules = sched_result.scalars().all()
+        schedule_map = {}
+        for sched in schedules:
+            schedule_map[(sched.employee_id, sched.date)] = sched
+        
         # Data
         row = 5
         for record in attendance_records:
             employee = next((e for e in employees if e.id == record.employee_id), None)
             if employee:
+                schedule = schedule_map.get((record.employee_id, record.date))
+                total_hrs_assigned = '-'
+                assigned_shift = '-'
+                if schedule and schedule.start_time and schedule.end_time:
+                    assigned_shift = f"{schedule.start_time} - {schedule.end_time}"
+                    try:
+                        start_h, start_m = map(int, schedule.start_time.split(':'))
+                        end_h, end_m = map(int, schedule.end_time.split(':'))
+                        start_decimal = start_h + start_m / 60
+                        end_decimal = end_h + end_m / 60
+                        hours = end_decimal - start_decimal if end_decimal > start_decimal else 24 - start_decimal + end_decimal
+                        total_hrs_assigned = f"{hours:.2f}"
+                    except:
+                        pass
+                total_hrs_worked = '-'
+                if record.check_in_time and record.check_out_time:
+                    try:
+                        diff = (record.check_out_time - record.check_in_time).total_seconds() / 3600
+                        total_hrs_worked = f"{diff:.2f}"
+                    except:
+                        pass
                 ws.cell(row=row, column=1).value = employee.employee_id
                 ws.cell(row=row, column=2).value = f"{employee.first_name} {employee.last_name}"
                 ws.cell(row=row, column=3).value = record.date.isoformat()
-                ws.cell(row=row, column=4).value = record.check_in_time.strftime('%H:%M:%S') if record.check_in_time else '-'
-                ws.cell(row=row, column=5).value = record.check_out_time.strftime('%H:%M:%S') if record.check_out_time else '-'
-                ws.cell(row=row, column=6).value = record.check_in_status or '-'
-                
-                for col in range(1, 7):
+                ws.cell(row=row, column=4).value = assigned_shift
+                ws.cell(row=row, column=5).value = total_hrs_assigned
+                ws.cell(row=row, column=6).value = record.check_in_time.strftime('%H:%M:%S') if record.check_in_time else '-'
+                ws.cell(row=row, column=7).value = record.check_out_time.strftime('%H:%M:%S') if record.check_out_time else '-'
+                ws.cell(row=row, column=8).value = total_hrs_worked
+                ws.cell(row=row, column=9).value = '1'
+                ws.cell(row=row, column=10).value = record.check_in_status or '-'
+                for col in range(1, 11):
                     ws.cell(row=row, column=col).border = border
                 row += 1
         
@@ -1573,9 +1787,13 @@ async def export_weekly_attendance(
         ws.column_dimensions['A'].width = 12
         ws.column_dimensions['B'].width = 20
         ws.column_dimensions['C'].width = 12
-        ws.column_dimensions['D'].width = 12
-        ws.column_dimensions['E'].width = 12
+        ws.column_dimensions['D'].width = 18
+        ws.column_dimensions['E'].width = 16
         ws.column_dimensions['F'].width = 12
+        ws.column_dimensions['G'].width = 12
+        ws.column_dimensions['H'].width = 14
+        ws.column_dimensions['I'].width = 12
+        ws.column_dimensions['J'].width = 12
         
         # Save to bytes
         file_bytes = io.BytesIO()
@@ -1987,6 +2205,134 @@ async def create_schedule(
         if not manager_dept or employee.department_id != manager_dept:
             raise HTTPException(status_code=403, detail="Can only schedule employees in your department")
 
+    # Get the shift/role to calculate hours
+    try:
+        start_h, start_m = map(int, schedule_data.start_time.split(':'))
+        end_h, end_m = map(int, schedule_data.end_time.split(':'))
+        start_decimal = start_h + start_m / 60
+        end_decimal = end_h + end_m / 60
+        shift_hours = end_decimal - start_decimal if end_decimal > start_decimal else 24 - start_decimal + end_decimal
+    except:
+        shift_hours = 0
+    
+    # Check if this creates overtime (exceeds 8hrs/day)
+    overtime_required = False
+    overtime_hours = 0
+    
+    if shift_hours > 8:
+        overtime_required = True
+        overtime_hours = shift_hours - 8
+    
+    # Check existing schedules for the day to see if daily limit exceeded
+    existing_result = await db.execute(
+        select(Schedule).filter(
+            Schedule.employee_id == schedule_data.employee_id,
+            Schedule.date == schedule_data.date
+        )
+    )
+    existing_schedules = existing_result.scalars().all()
+    
+    existing_hours = 0
+    for sched in existing_schedules:
+        try:
+            start_h, start_m = map(int, sched.start_time.split(':'))
+            end_h, end_m = map(int, sched.end_time.split(':'))
+            start_decimal = start_h + start_m / 60
+            end_decimal = end_h + end_m / 60
+            hours = end_decimal - start_decimal if end_decimal > start_decimal else 24 - start_decimal + end_decimal
+            existing_hours += hours
+        except:
+            pass
+    
+    # Total hours for the day would be existing + new
+    total_daily_hours = existing_hours + shift_hours
+    
+    if total_daily_hours > 8:
+        overtime_required = True
+        overtime_hours = total_daily_hours - 8
+    
+    # Check weekly hours
+    week_start = schedule_data.date - timedelta(days=schedule_data.date.weekday())
+    week_end = week_start + timedelta(days=6)
+    
+    week_result = await db.execute(
+        select(Schedule).filter(
+            Schedule.employee_id == schedule_data.employee_id,
+            Schedule.date >= week_start,
+            Schedule.date <= week_end
+        )
+    )
+    week_schedules = week_result.scalars().all()
+    
+    existing_weekly_hours = 0
+    for sched in week_schedules:
+        try:
+            start_h, start_m = map(int, sched.start_time.split(':'))
+            end_h, end_m = map(int, sched.end_time.split(':'))
+            start_decimal = start_h + start_m / 60
+            end_decimal = end_h + end_m / 60
+            hours = end_decimal - start_decimal if end_decimal > start_decimal else 24 - start_decimal + end_decimal
+            existing_weekly_hours += hours
+        except:
+            pass
+    
+    total_weekly_hours = existing_weekly_hours + shift_hours
+    
+    if total_weekly_hours > 40:
+        overtime_required = True
+        weekly_overtime_hours = total_weekly_hours - 40
+    
+    # If overtime required, return info about it (frontend will show popup)
+    if overtime_required:
+        # Check if employee has enough OT available
+        year = schedule_data.date.year
+        month = schedule_data.date.month
+        
+        tracking_result = await db.execute(
+            select(OvertimeTracking).filter(
+                OvertimeTracking.employee_id == schedule_data.employee_id,
+                OvertimeTracking.year == year,
+                OvertimeTracking.month == month
+            )
+        )
+        tracking = tracking_result.scalar_one_or_none()
+        
+        if not tracking:
+            # Create default tracking
+            tracking = OvertimeTracking(
+                employee_id=schedule_data.employee_id,
+                year=year,
+                month=month,
+                allocated_hours=8,
+                used_hours=0.0,
+                remaining_hours=8
+            )
+            db.add(tracking)
+            await db.commit()
+            await db.refresh(tracking)
+        
+        has_sufficient_ot = tracking.remaining_hours >= overtime_hours
+        
+        return {
+            "id": None,
+            "status": "requires_overtime_approval",
+            "message": f"This schedule requires {overtime_hours:.1f}h overtime",
+            "employee_id": schedule_data.employee_id,
+            "employee_name": f"{employee.first_name} {employee.last_name}",
+            "date": schedule_data.date.isoformat(),
+            "start_time": schedule_data.start_time,
+            "end_time": schedule_data.end_time,
+            "shift_hours": shift_hours,
+            "overtime_hours": overtime_hours,
+            "total_daily_hours": total_daily_hours if total_daily_hours > 8 else None,
+            "total_weekly_hours": total_weekly_hours if total_weekly_hours > 40 else None,
+            "allocated_ot_hours": tracking.allocated_hours,
+            "used_ot_hours": tracking.used_hours,
+            "remaining_ot_hours": tracking.remaining_hours,
+            "has_sufficient_ot": has_sufficient_ot
+        }
+    
+    # Create schedule normally if no overtime required
     schedule = Schedule(
         department_id=employee.department_id,
         employee_id=schedule_data.employee_id,
@@ -2530,11 +2876,30 @@ async def record_checkout(
             attendance.worked_hours = round(worked_hours, 2)
             attendance.break_minutes = break_minutes
             
-            # Calculate overtime if exceeds daily max
+            # Calculate overtime considering approved overtime
             if schedule:
                 emp = await db.get(Employee, attendance.employee_id)
                 if emp and worked_hours > emp.daily_max_hours:
-                    attendance.overtime_hours = round(worked_hours - emp.daily_max_hours, 2)
+                    actual_overtime = worked_hours - emp.daily_max_hours
+                    
+                    # Get approved overtime for this date if exists
+                    approved_overtime_result = await db.execute(
+                        select(OvertimeRequest).filter(
+                            OvertimeRequest.employee_id == attendance.employee_id,
+                            OvertimeRequest.request_date == attendance.date,
+                            OvertimeRequest.status == OvertimeStatus.APPROVED
+                        )
+                    )
+                    overtime_request = approved_overtime_result.scalar_one_or_none()
+                    
+                    if overtime_request:
+                        # Use minimum of actual overtime and approved overtime
+                        # This ensures we show approved amount if they worked more, or actual if less
+                        overtime_hours = min(actual_overtime, overtime_request.request_hours)
+                        attendance.overtime_hours = round(overtime_hours, 2)
+                    else:
+                        # No approved overtime, show actual overtime worked
+                        attendance.overtime_hours = round(actual_overtime, 2)
         except Exception as e:
             raise HTTPException(status_code=400, detail="Invalid time format")
     
@@ -2929,6 +3294,404 @@ async def delete_shift(
     await db.commit()
     
     return {"detail": "Shift deleted successfully"}
+
+
+# ===== OVERTIME MANAGEMENT =====
+
+@app.post("/overtime-requests", response_model=OvertimeRequestResponse)
+async def create_overtime_request(
+    request_data: OvertimeRequestCreate,
+    current_user: User = Depends(require_employee),
+    db: AsyncSession = Depends(get_db)
+):
+    """Employee submits an overtime request"""
+    # Get employee record
+    emp_result = await db.execute(
+        select(Employee).filter(Employee.user_id == current_user.id)
+    )
+    employee = emp_result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(status_code=400, detail="Employee record not found")
+    
+    # Create overtime request
+    ot_request = OvertimeRequest(
+        employee_id=employee.id,
+        request_date=request_data.request_date,
+        from_time=request_data.from_time,
+        to_time=request_data.to_time,
+        request_hours=request_data.request_hours,
+        reason=request_data.reason,
+        status=OvertimeStatus.PENDING
+    )
+    
+    db.add(ot_request)
+    await db.commit()
+    await db.refresh(ot_request)
+    
+    return ot_request
+
+
+@app.get("/overtime-requests", response_model=List[OvertimeRequestResponse])
+async def list_overtime_requests(
+    status: str = None,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """List overtime requests. Managers see pending requests, employees see their own"""
+    query = select(OvertimeRequest)
+    
+    if current_user.user_type == UserType.EMPLOYEE:
+        # Employees see their own requests
+        emp_result = await db.execute(
+            select(Employee).filter(Employee.user_id == current_user.id)
+        )
+        employee = emp_result.scalar_one_or_none()
+        if not employee:
+            raise HTTPException(status_code=400, detail="Employee record not found")
+        query = query.filter(OvertimeRequest.employee_id == employee.id)
+    elif current_user.user_type == UserType.MANAGER:
+        # Managers see pending requests for their department
+        manager_dept = await get_manager_department(current_user, db)
+        if not manager_dept:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        # Join with Employee to filter by department
+        query = query.join(Employee).filter(
+            Employee.department_id == manager_dept
+        )
+        if not status:
+            status = OvertimeStatus.PENDING
+    else:  # ADMIN
+        if not status:
+            status = OvertimeStatus.PENDING
+    
+    if status:
+        query = query.filter(OvertimeRequest.status == status)
+    
+    result = await db.execute(query.order_by(OvertimeRequest.request_date.desc()))
+    return result.scalars().all()
+
+
+@app.put("/overtime-requests/{request_id}/approve", response_model=OvertimeRequestResponse)
+async def approve_overtime_request(
+    request_id: int,
+    approval_data: dict,
+    current_user: User = Depends(require_manager),
+    db: AsyncSession = Depends(get_db)
+):
+    """Manager approves an overtime request"""
+    result = await db.execute(
+        select(OvertimeRequest).filter(OvertimeRequest.id == request_id)
+    )
+    ot_request = result.scalar_one_or_none()
+    
+    if not ot_request:
+        raise HTTPException(status_code=404, detail="Overtime request not found")
+    
+    # Verify manager's authority over employee's department
+    emp_result = await db.execute(
+        select(Employee).filter(Employee.id == ot_request.employee_id)
+    )
+    employee = emp_result.scalar_one_or_none()
+    
+    manager_dept = await get_manager_department(current_user, db)
+    if not manager_dept or employee.department_id != manager_dept:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    ot_request.status = OvertimeStatus.APPROVED
+    ot_request.approved_at = datetime.utcnow()
+    ot_request.approval_notes = approval_data.get("approval_notes", "")
+    
+    await db.commit()
+    await db.refresh(ot_request)
+    
+    return ot_request
+
+
+@app.put("/overtime-requests/{request_id}/reject", response_model=OvertimeRequestResponse)
+async def reject_overtime_request(
+    request_id: int,
+    rejection_data: dict,
+    current_user: User = Depends(require_manager),
+    db: AsyncSession = Depends(get_db)
+):
+    """Manager rejects an overtime request"""
+    result = await db.execute(
+        select(OvertimeRequest).filter(OvertimeRequest.id == request_id)
+    )
+    ot_request = result.scalar_one_or_none()
+    
+    if not ot_request:
+        raise HTTPException(status_code=404, detail="Overtime request not found")
+    
+    # Verify manager's authority over employee's department
+    emp_result = await db.execute(
+        select(Employee).filter(Employee.id == ot_request.employee_id)
+    )
+    employee = emp_result.scalar_one_or_none()
+    
+    manager_dept = await get_manager_department(current_user, db)
+    if not manager_dept or employee.department_id != manager_dept:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    ot_request.status = OvertimeStatus.REJECTED
+    ot_request.approved_at = datetime.utcnow()
+    ot_request.approval_notes = rejection_data.get("approval_notes", "")
+    
+    await db.commit()
+    await db.refresh(ot_request)
+    
+    return ot_request
+
+
+@app.get("/overtime/tracking", response_model=List[OvertimeTrackingResponse])
+async def get_overtime_tracking(
+    employee_id: int = None,
+    year: int = None,
+    month: int = None,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get overtime tracking for employee(s). Returns monthly allocation and usage."""
+    if year is None:
+        year = date.today().year
+    if month is None:
+        month = date.today().month
+    
+    query = select(OvertimeTracking).filter(
+        OvertimeTracking.year == year,
+        OvertimeTracking.month == month
+    )
+    
+    if current_user.user_type == UserType.EMPLOYEE:
+        # Employees see their own tracking
+        emp_result = await db.execute(
+            select(Employee).filter(Employee.user_id == current_user.id)
+        )
+        employee = emp_result.scalar_one_or_none()
+        if not employee:
+            raise HTTPException(status_code=400, detail="Employee record not found")
+        query = query.filter(OvertimeTracking.employee_id == employee.id)
+    elif current_user.user_type == UserType.MANAGER:
+        # Managers see tracking for their department
+        manager_dept = await get_manager_department(current_user, db)
+        if not manager_dept:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        query = query.join(Employee).filter(
+            Employee.department_id == manager_dept
+        )
+        
+        if employee_id:
+            query = query.filter(OvertimeTracking.employee_id == employee_id)
+    elif employee_id:
+        query = query.filter(OvertimeTracking.employee_id == employee_id)
+    
+    result = await db.execute(query)
+    tracking_records = result.scalars().all()
+    
+    # If no records exist, create them for the month
+    if not tracking_records:
+        if current_user.user_type == UserType.EMPLOYEE:
+            emp_result = await db.execute(
+                select(Employee).filter(Employee.user_id == current_user.id)
+            )
+            employee = emp_result.scalar_one_or_none()
+            if employee:
+                tracking = OvertimeTracking(
+                    employee_id=employee.id,
+                    year=year,
+                    month=month,
+                    allocated_hours=8,  # 8 hours per month baseline
+                    used_hours=0.0,
+                    remaining_hours=8
+                )
+                db.add(tracking)
+                await db.commit()
+                tracking_records = [tracking]
+    
+    return tracking_records
+
+
+@app.post("/overtime/check-availability")
+async def check_overtime_availability(
+    employee_id: int,
+    requested_hours: float,
+    year: int = None,
+    month: int = None,
+    current_user: User = Depends(require_manager),
+    db: AsyncSession = Depends(get_db)
+):
+    """Check if employee has sufficient overtime available for a schedule"""
+    if year is None:
+        year = date.today().year
+    if month is None:
+        month = date.today().month
+    
+    # Verify manager can access this employee
+    emp_result = await db.execute(
+        select(Employee).filter(Employee.id == employee_id)
+    )
+    employee = emp_result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    manager_dept = await get_manager_department(current_user, db)
+    if not manager_dept or employee.department_id != manager_dept:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Get tracking for the month
+    result = await db.execute(
+        select(OvertimeTracking).filter(
+            OvertimeTracking.employee_id == employee_id,
+            OvertimeTracking.year == year,
+            OvertimeTracking.month == month
+        )
+    )
+    tracking = result.scalar_one_or_none()
+    
+    if not tracking:
+        # Create default tracking if doesn't exist
+        tracking = OvertimeTracking(
+            employee_id=employee_id,
+            year=year,
+            month=month,
+            allocated_hours=8,
+            used_hours=0.0,
+            remaining_hours=8
+        )
+        db.add(tracking)
+        await db.commit()
+        await db.refresh(tracking)
+    
+    available = tracking.remaining_hours >= requested_hours
+    
+    return {
+        "employee_id": employee_id,
+        "employee_name": f"{employee.first_name} {employee.last_name}",
+        "year": year,
+        "month": month,
+        "allocated_hours": tracking.allocated_hours,
+        "used_hours": tracking.used_hours,
+        "remaining_hours": tracking.remaining_hours,
+        "requested_hours": requested_hours,
+        "available": available,
+        "message": f"Sufficient overtime available" if available else f"Insufficient overtime. Required: {requested_hours}h, Available: {tracking.remaining_hours}h"
+    }
+
+
+@app.post("/overtime/worked", response_model=OvertimeWorkedResponse)
+async def record_overtime_worked(
+    worked_data: dict,
+    current_user: User = Depends(require_manager),
+    db: AsyncSession = Depends(get_db)
+):
+    """Record overtime hours worked on a specific day"""
+    employee_id = worked_data.get("employee_id")
+    work_date = datetime.strptime(worked_data.get("work_date"), "%Y-%m-%d").date()
+    overtime_hours = worked_data.get("overtime_hours", 0)
+    
+    # Verify manager can access this employee
+    emp_result = await db.execute(
+        select(Employee).filter(Employee.id == employee_id)
+    )
+    employee = emp_result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    manager_dept = await get_manager_department(current_user, db)
+    if not manager_dept or employee.department_id != manager_dept:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Create OvertimeWorked record
+    ot_worked = OvertimeWorked(
+        employee_id=employee_id,
+        work_date=work_date,
+        overtime_hours=overtime_hours
+    )
+    
+    db.add(ot_worked)
+    
+    # Update OvertimeTracking for that month
+    month = work_date.month
+    year = work_date.year
+    
+    result = await db.execute(
+        select(OvertimeTracking).filter(
+            OvertimeTracking.employee_id == employee_id,
+            OvertimeTracking.year == year,
+            OvertimeTracking.month == month
+        )
+    )
+    tracking = result.scalar_one_or_none()
+    
+    if not tracking:
+        # Create if doesn't exist
+        tracking = OvertimeTracking(
+            employee_id=employee_id,
+            year=year,
+            month=month,
+            allocated_hours=8,
+            used_hours=overtime_hours,
+            remaining_hours=8 - overtime_hours
+        )
+        db.add(tracking)
+    else:
+        # Update existing
+        tracking.used_hours += overtime_hours
+        tracking.remaining_hours = tracking.allocated_hours - tracking.used_hours
+    
+    await db.commit()
+    await db.refresh(ot_worked)
+    
+    return ot_worked
+
+
+@app.get("/overtime/worked", response_model=List[OvertimeWorkedResponse])
+async def list_overtime_worked(
+    employee_id: int = None,
+    start_date: date = None,
+    end_date: date = None,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """List overtime worked records"""
+    query = select(OvertimeWorked)
+    
+    if current_user.user_type == UserType.EMPLOYEE:
+        # Employees see their own overtime
+        emp_result = await db.execute(
+            select(Employee).filter(Employee.user_id == current_user.id)
+        )
+        employee = emp_result.scalar_one_or_none()
+        if not employee:
+            raise HTTPException(status_code=400, detail="Employee record not found")
+        query = query.filter(OvertimeWorked.employee_id == employee.id)
+    elif current_user.user_type == UserType.MANAGER:
+        # Managers see overtime for their department
+        manager_dept = await get_manager_department(current_user, db)
+        if not manager_dept:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        query = query.join(Employee).filter(
+            Employee.department_id == manager_dept
+        )
+        
+        if employee_id:
+            query = query.filter(OvertimeWorked.employee_id == employee_id)
+    elif employee_id:
+        query = query.filter(OvertimeWorked.employee_id == employee_id)
+    
+    if start_date:
+        query = query.filter(OvertimeWorked.work_date >= start_date)
+    if end_date:
+        query = query.filter(OvertimeWorked.work_date <= end_date)
+    
+    result = await db.execute(query.order_by(OvertimeWorked.work_date.desc()))
+    return result.scalars().all()
 
 
 @app.delete("/admin/roles/all")

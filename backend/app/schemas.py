@@ -478,6 +478,8 @@ class AttendanceResponse(BaseModel):
     break_minutes: int
     notes: Optional[str]
     created_at: datetime
+    employee: Optional['EmployeeResponse'] = None
+    schedule: Optional['ScheduleResponse'] = None
 
     class Config:
         from_attributes = True
@@ -513,6 +515,57 @@ class ShiftRequestResponse(BaseModel):
     reason: Optional[str]
     status: str  # pending, approved, rejected
     created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Overtime Schemas
+class OvertimeTrackingResponse(BaseModel):
+    id: int
+    employee_id: int
+    month: int
+    year: int
+    allocated_hours: float
+    used_hours: float
+    remaining_hours: float
+
+    class Config:
+        from_attributes = True
+
+
+class OvertimeRequestCreate(BaseModel):
+    request_date: date
+    from_time: str
+    to_time: str
+    request_hours: float
+    reason: str
+
+
+class OvertimeRequestResponse(BaseModel):
+    id: int
+    employee_id: int
+    request_date: date
+    from_time: Optional[str] = None
+    to_time: Optional[str] = None
+    request_hours: float
+    reason: str
+    status: str
+    manager_notes: Optional[str] = None
+    created_at: datetime
+    approved_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class OvertimeWorkedResponse(BaseModel):
+    id: int
+    employee_id: int
+    work_date: date
+    overtime_hours: float
+    approval_status: str
+    notes: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -9,6 +9,7 @@ import Modal from '../components/common/Modal';
 import Table from '../components/common/Table';
 import RoleManagement from '../components/RoleManagement';
 import ScheduleManager from '../components/ScheduleManager';
+import OvertimeApproval from '../components/OvertimeApproval';
 import api from '../services/api';
 import {
   listEmployees,
@@ -1863,6 +1864,7 @@ const ManagerAttendance = ({ user }) => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-Out</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Hrs Worked</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Break Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Overtime Hours</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   </tr>
                 </thead>
@@ -1876,16 +1878,6 @@ const ManagerAttendance = ({ user }) => {
                       const start = startH + startM / 60;
                       const end = endH + endM / 60;
                       const hours = end > start ? end - start : 24 - start + end;
-                      return hours.toFixed(2);
-                    };
-
-                    // Calculate total hours worked
-                    const calculateTotalHoursWorked = () => {
-                      if (!record.check_in_time || !record.check_out_time) return '-';
-                      const checkIn = new Date(record.check_in_time);
-                      const checkOut = new Date(record.check_out_time);
-                      const diffMs = checkOut - checkIn;
-                      const hours = diffMs / (1000 * 60 * 60);
                       return hours.toFixed(2);
                     };
 
@@ -1904,25 +1896,28 @@ const ManagerAttendance = ({ user }) => {
                           {calculateTotalAssignedHours()} hrs
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {record.check_in_time ? format(new Date(record.check_in_time), 'HH:mm') : '-'}
+                          {record.in_time ? record.in_time : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {record.check_out_time ? format(new Date(record.check_out_time), 'HH:mm') : '-'}
+                          {record.out_time ? record.out_time : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                          {calculateTotalHoursWorked()} hrs
+                          {record.worked_hours ? record.worked_hours.toFixed(2) : '-'} hrs
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          1 hr
+                          {record.break_minutes} min
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-orange-600">
+                          {record.overtime_hours ? record.overtime_hours.toFixed(2) : '-'} hrs
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded-full text-xs ${
-                            record.check_in_status === 'on-time' ? 'bg-green-100 text-green-800' :
-                            record.check_in_status === 'slightly-late' ? 'bg-yellow-100 text-yellow-800' :
-                            record.check_in_status === 'late' ? 'bg-orange-100 text-orange-800' :
+                            record.status === 'onTime' ? 'bg-green-100 text-green-800' :
+                            record.status === 'slightlyLate' ? 'bg-yellow-100 text-yellow-800' :
+                            record.status === 'late' ? 'bg-orange-100 text-orange-800' :
                             'bg-blue-100 text-blue-800'
                           }`}>
-                            {record.check_in_status || 'Scheduled'}
+                            {record.status || 'Scheduled'}
                           </span>
                         </td>
                       </tr>
@@ -2239,6 +2234,7 @@ const ManagerDashboard = ({ user, onLogout }) => {
             <Route path="/roles" element={<ManagerRoles user={user} />} />
             <Route path="/schedules" element={<ManagerSchedules user={user} />} />
             <Route path="/leaves" element={<ManagerLeaves />} />
+            <Route path="/overtime-approvals" element={<OvertimeApproval />} />
             <Route path="/attendance" element={<ManagerAttendance user={user} />} />
             <Route path="/messages" element={<ManagerMessages user={user} />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

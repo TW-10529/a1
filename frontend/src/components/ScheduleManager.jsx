@@ -126,7 +126,14 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
       setTimeout(() => loadSchedulesForWeek(), 500);
     } catch (error) {
       console.error('Generation error:', error);
-      setError('Failed to generate schedule: ' + (error.response?.data?.detail || error.message));
+      let errorMsg = error.message;
+      const detail = error.response?.data?.detail;
+      if (typeof detail === 'string') {
+        errorMsg = detail;
+      } else if (Array.isArray(detail)) {
+        errorMsg = detail.map(e => typeof e === 'string' ? e : e.msg || JSON.stringify(e)).join(', ');
+      }
+      setError('Failed to generate schedule: ' + errorMsg);
       setTimeout(() => setError(''), 3000);
     } finally {
       setLoading(false);
@@ -208,7 +215,15 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
       setViewMode('view');
       await loadSchedulesForWeek();
     } catch (error) {
-      setError('Failed to save schedule: ' + (error.response?.data?.detail || error.message));
+      console.error('Save error:', error);
+      let errorMsg = error.message;
+      const detail = error.response?.data?.detail;
+      if (typeof detail === 'string') {
+        errorMsg = detail;
+      } else if (Array.isArray(detail)) {
+        errorMsg = detail.map(e => typeof e === 'string' ? e : e.msg || JSON.stringify(e)).join(', ');
+      }
+      setError('Failed to save schedule: ' + errorMsg);
       setTimeout(() => setError(''), 3000);
     } finally {
       setLoading(false);
