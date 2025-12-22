@@ -29,7 +29,8 @@ import {
   sendMessage,
   getMessages,
   deleteMessage,
-  deleteShift
+  deleteShift,
+  getEmployeeLeaveStatistics
 } from '../services/api';
 import {
   Plus, Edit2, Trash2, AlertCircle, Clock, CheckCircle, XCircle, ChevronLeft,
@@ -1486,6 +1487,9 @@ const ManagerLeaves = () => {
   const [reviewNotes, setReviewNotes] = useState('');
   const [action, setAction] = useState('');
   const [loading, setLoading] = useState(true);
+  const [searchEmpId, setSearchEmpId] = useState('');
+  const [employeeStats, setEmployeeStats] = useState(null);
+  const [showEmployeeStats, setShowEmployeeStats] = useState(false);
 
   useEffect(() => {
     loadLeaves();
@@ -1499,6 +1503,21 @@ const ManagerLeaves = () => {
       console.error('Failed to load leave requests:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearchEmployee = async () => {
+    if (!searchEmpId.trim()) {
+      alert('Please enter an employee ID');
+      return;
+    }
+    try {
+      const response = await getEmployeeLeaveStatistics(searchEmpId.trim());
+      setEmployeeStats(response.data);
+      setShowEmployeeStats(true);
+    } catch (error) {
+      console.error('Failed to load employee leave statistics:', error);
+      alert('Employee not found or error loading data');
     }
   };
 
@@ -1522,6 +1541,197 @@ const ManagerLeaves = () => {
     } catch (error) {
       alert('Failed to process leave request');
     }
+  };
+
+  const downloadAsExcel = (stats) => {
+    // Create HTML table format for Excel with better organization
+    const html = `
+    <table border="1" cellspacing="0" cellpadding="8">
+      <!-- ========== HEADER ========== -->
+      <tr style="background-color: #1e40af; color: white; font-weight: bold; height: 30px;">
+        <td colspan="5" style="font-size: 18px; text-align: center; padding: 15px;">
+          EMPLOYEE LEAVE STATISTICS REPORT
+        </td>
+      </tr>
+      
+      <!-- Employee Info -->
+      <tr style="background-color: #e0e7ff;">
+        <td style="font-weight: bold;">Employee Name:</td>
+        <td>${stats.employee_name}</td>
+        <td style="font-weight: bold;">Employee ID:</td>
+        <td colspan="2">${stats.employee_id}</td>
+      </tr>
+      <tr style="background-color: #e0e7ff;">
+        <td style="font-weight: bold;">Report Generated:</td>
+        <td colspan="4">${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</td>
+      </tr>
+      
+      <!-- Spacing -->
+      <tr style="height: 15px;"><td colspan="5"></td></tr>
+      
+      <!-- ========== OVERALL SUMMARY ========== -->
+      <tr style="background-color: #fbbf24; color: #1f2937; font-weight: bold; height: 25px;">
+        <td colspan="5" style="font-size: 14px;">OVERALL YEARLY SUMMARY</td>
+      </tr>
+      
+      <tr style="background-color: #fef3c7;">
+        <td style="font-weight: bold; width: 25%;">Metric</td>
+        <td style="font-weight: bold; text-align: center; width: 18%;">Paid Days</td>
+        <td style="font-weight: bold; text-align: center; width: 18%;">Unpaid Days</td>
+        <td style="font-weight: bold; text-align: center; width: 18%;">Total Days</td>
+        <td style="font-weight: bold; text-align: center; width: 21%;">Usage %</td>
+      </tr>
+      
+      <tr style="background-color: #fffbeb;">
+        <td style="font-weight: bold;">Total Taken</td>
+        <td style="text-align: center;">${stats.taken_paid_leave}</td>
+        <td style="text-align: center;">${stats.taken_unpaid_leave}</td>
+        <td style="text-align: center; font-weight: bold;">${stats.total_leaves_taken}</td>
+        <td style="text-align: center;">${stats.total_paid_leave > 0 ? Math.round((stats.taken_paid_leave / stats.total_paid_leave) * 100) : 0}%</td>
+      </tr>
+      
+      <tr style="background-color: #fffbeb;">
+        <td style="font-weight: bold;">Entitlement</td>
+        <td style="text-align: center;">${stats.total_paid_leave}</td>
+        <td style="text-align: center;">-</td>
+        <td style="text-align: center; font-weight: bold;">-</td>
+        <td style="text-align: center;">-</td>
+      </tr>
+      
+      <tr style="background-color: #fffbeb;">
+        <td style="font-weight: bold;">Available/Remaining</td>
+        <td style="text-align: center;">${stats.available_paid_leave}</td>
+        <td style="text-align: center;">-</td>
+        <td style="text-align: center; font-weight: bold;">-</td>
+        <td style="text-align: center;">-</td>
+      </tr>
+      
+      <!-- Spacing -->
+      <tr style="height: 15px;"><td colspan="5"></td></tr>
+      
+      <!-- ========== MONTHLY BREAKDOWN ========== -->
+      <tr style="background-color: #3b82f6; color: white; font-weight: bold; height: 25px;">
+        <td colspan="5" style="font-size: 14px;">MONTH-WISE BREAKDOWN</td>
+      </tr>
+      
+      <tr style="background-color: #dbeafe; font-weight: bold;">
+        <td style="width: 25%; text-align: center;">Month</td>
+        <td style="width: 18%; text-align: center; background-color: #ede9fe;">Paid Days</td>
+        <td style="width: 18%; text-align: center; background-color: #fee2e2;">Unpaid Days</td>
+        <td style="width: 18%; text-align: center; background-color: #ccfbf1;">Total Days</td>
+        <td style="width: 21%; text-align: center;">Daily Avg</td>
+      </tr>
+      
+      ${stats.monthly_breakdown && stats.monthly_breakdown.length > 0
+        ? stats.monthly_breakdown
+            .map(
+              (month, idx) => {
+                const daysInMonth = new Date(new Date(month.month + ' 1').getFullYear(), new Date(month.month + ' 1').getMonth() + 1, 0).getDate();
+                const dailyAvg = (month.total / daysInMonth).toFixed(2);
+                return `
+        <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f9fafb'};">
+          <td style="text-align: center; font-weight: 500;">${month.month}</td>
+          <td style="text-align: center; background-color: ${idx % 2 === 0 ? '#f3e8ff' : '#faf5ff'};">${month.paid}</td>
+          <td style="text-align: center; background-color: ${idx % 2 === 0 ? '#fef2f2' : '#fdf8f8'};">${month.unpaid}</td>
+          <td style="text-align: center; background-color: ${idx % 2 === 0 ? '#ccfbf1' : '#e5fdf9'}; font-weight: bold;">${month.total}</td>
+          <td style="text-align: center;">${dailyAvg} days/day</td>
+        </tr>
+                `;
+              }
+            )
+            .join('')
+        : '<tr><td colspan="5" style="text-align: center; padding: 20px;">No monthly data available</td></tr>'
+      }
+      
+      <!-- Monthly Summary Row -->
+      <tr style="background-color: #e5e7eb; font-weight: bold; height: 25px;">
+        <td style="text-align: center;">TOTAL</td>
+        <td style="text-align: center; background-color: #ede9fe;">
+          ${stats.monthly_breakdown && stats.monthly_breakdown.length > 0
+            ? stats.monthly_breakdown.reduce((sum, month) => sum + month.paid, 0)
+            : stats.taken_paid_leave
+          }
+        </td>
+        <td style="text-align: center; background-color: #fee2e2;">
+          ${stats.monthly_breakdown && stats.monthly_breakdown.length > 0
+            ? stats.monthly_breakdown.reduce((sum, month) => sum + month.unpaid, 0)
+            : stats.taken_unpaid_leave
+          }
+        </td>
+        <td style="text-align: center; background-color: #ccfbf1;">
+          ${stats.total_leaves_taken}
+        </td>
+        <td style="text-align: center;">
+          ${stats.monthly_breakdown && stats.monthly_breakdown.length > 0
+            ? (stats.total_leaves_taken / stats.monthly_breakdown.length).toFixed(2)
+            : stats.total_leaves_taken
+          } days/month
+        </td>
+      </tr>
+      
+      <!-- Spacing -->
+      <tr style="height: 15px;"><td colspan="5"></td></tr>
+      
+      <!-- ========== DETAILED BREAKUP ========== -->
+      <tr style="background-color: #10b981; color: white; font-weight: bold; height: 25px;">
+        <td colspan="5" style="font-size: 14px;">DETAILED STATISTICS</td>
+      </tr>
+      
+      <tr style="background-color: #d1fae5;">
+        <td style="font-weight: bold; width: 40%;">Category</td>
+        <td colspan="4" style="font-weight: bold; text-align: center;">Value</td>
+      </tr>
+      
+      <tr style="background-color: #f0fdf4;">
+        <td style="font-weight: bold;">Total Paid Leave Entitlement (Annual)</td>
+        <td colspan="4" style="text-align: center;">${stats.total_paid_leave} days</td>
+      </tr>
+      
+      <tr style="background-color: #f0fdf4;">
+        <td style="font-weight: bold;">Paid Leave Taken</td>
+        <td colspan="4" style="text-align: center;">${stats.taken_paid_leave} days</td>
+      </tr>
+      
+      <tr style="background-color: #f0fdf4;">
+        <td style="font-weight: bold;">Paid Leave Available/Remaining</td>
+        <td colspan="4" style="text-align: center;">${stats.available_paid_leave} days</td>
+      </tr>
+      
+      <tr style="background-color: #f0fdf4;">
+        <td style="font-weight: bold;">Unpaid Leave Taken</td>
+        <td colspan="4" style="text-align: center;">${stats.taken_unpaid_leave} days</td>
+      </tr>
+      
+      <tr style="background-color: #f0fdf4;">
+        <td style="font-weight: bold;">Paid Leave Usage Percentage</td>
+        <td colspan="4" style="text-align: center;">${stats.total_paid_leave > 0 ? Math.round((stats.taken_paid_leave / stats.total_paid_leave) * 100) : 0}%</td>
+      </tr>
+      
+      <tr style="background-color: #f0fdf4;">
+        <td style="font-weight: bold;">Average Days per Month</td>
+        <td colspan="4" style="text-align: center;">
+          ${stats.monthly_breakdown && stats.monthly_breakdown.length > 0
+            ? (stats.total_leaves_taken / stats.monthly_breakdown.length).toFixed(2)
+            : 0
+          } days
+        </td>
+      </tr>
+      
+    </table>
+    `;
+
+    // Create blob with HTML content
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${stats.employee_name}_leave_statistics_${new Date().toISOString().split('T')[0]}.xls`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getStatusBadge = (status) => {
@@ -1579,6 +1789,254 @@ const ManagerLeaves = () => {
     <div>
       <Header title="Leave Requests" subtitle="Review and manage leave requests" />
       <div className="p-6">
+        {/* Employee Search Section */}
+        <Card title="Search Employee Leave Details" className="mb-6">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              placeholder="Enter Employee ID"
+              value={searchEmpId}
+              onChange={(e) => setSearchEmpId(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearchEmployee()}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+            <Button onClick={handleSearchEmployee}>Search</Button>
+          </div>
+        </Card>
+
+        {/* Employee Quick Summary */}
+        {showEmployeeStats && employeeStats && (
+          <div className="mb-6">
+            <Card className="mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">{employeeStats.employee_name}</h3>
+                  <p className="text-sm text-gray-600">Employee ID: {employeeStats.employee_id}</p>
+                </div>
+                <Button onClick={() => setShowEmployeeStats(true)}>View Full Details</Button>
+              </div>
+            </Card>
+
+            {/* Quick Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <p className="text-xs text-gray-600 mb-1">Total Paid Leave</p>
+                <p className="text-2xl font-bold text-purple-600">{employeeStats.total_paid_leave}</p>
+              </div>
+              <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <p className="text-xs text-gray-600 mb-1">Taken (Paid)</p>
+                <p className="text-2xl font-bold text-orange-600">{employeeStats.taken_paid_leave}</p>
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-xs text-gray-600 mb-1">Available (Paid)</p>
+                <p className="text-2xl font-bold text-green-600">{employeeStats.available_paid_leave}</p>
+              </div>
+              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                <p className="text-xs text-gray-600 mb-1">Taken (Unpaid)</p>
+                <p className="text-2xl font-bold text-red-600">{employeeStats.taken_unpaid_leave}</p>
+              </div>
+            </div>
+
+            {/* Detailed Modal for Full View */}
+            {showEmployeeStats && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-auto">
+                <div className="bg-white rounded-lg max-w-5xl w-full shadow-2xl">
+                  {/* Modal Header */}
+                  <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 flex justify-between items-center rounded-t-lg">
+                    <div>
+                      <h2 className="text-2xl font-bold">{employeeStats.employee_name}</h2>
+                      <p className="text-sm text-blue-100">Employee ID: {employeeStats.employee_id}</p>
+                      <p className="text-xs text-blue-200 mt-1">Generated on {new Date().toLocaleDateString()}</p>
+                    </div>
+                    <button
+                      onClick={() => setShowEmployeeStats(false)}
+                      className="text-3xl font-bold hover:text-blue-200 transition"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  {/* Modal Content - Scrollable */}
+                  <div className="p-6 max-h-96 overflow-y-auto">
+                    {/* Paid Leave Statistics - Detailed */}
+                    <div className="mb-8">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-purple-500">
+                        📋 Paid Leave Statistics
+                      </h3>
+                      <div className="grid grid-cols-3 gap-4 mb-6">
+                        <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                          <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Total Annual Entitlement</p>
+                          <p className="text-4xl font-bold text-purple-600">{employeeStats.total_paid_leave}</p>
+                          <p className="text-xs text-gray-500 mt-1">days per year</p>
+                        </div>
+                        <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+                          <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Days Taken</p>
+                          <p className="text-4xl font-bold text-orange-600">{employeeStats.taken_paid_leave}</p>
+                          <p className="text-xs text-gray-500 mt-1">days utilized</p>
+                        </div>
+                        <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                          <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Days Available</p>
+                          <p className="text-4xl font-bold text-green-600">{employeeStats.available_paid_leave}</p>
+                          <p className="text-xs text-gray-500 mt-1">days remaining</p>
+                        </div>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="bg-gray-50 p-4 rounded-lg mb-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="text-sm font-semibold text-gray-700">Usage Progress</p>
+                          <p className="text-sm font-bold text-purple-600">
+                            {employeeStats.total_paid_leave > 0
+                              ? Math.round((employeeStats.taken_paid_leave / employeeStats.total_paid_leave) * 100)
+                              : 0}%
+                          </p>
+                        </div>
+                        <div className="w-full bg-gray-300 rounded-full h-3">
+                          <div
+                            className="bg-purple-600 h-3 rounded-full transition-all"
+                            style={{
+                              width: `${employeeStats.total_paid_leave > 0
+                                ? Math.min((employeeStats.taken_paid_leave / employeeStats.total_paid_leave) * 100, 100)
+                                : 0}%`
+                            }}
+                          ></div>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-2">
+                          {employeeStats.taken_paid_leave} / {employeeStats.total_paid_leave} days used
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Unpaid Leave Statistics - Detailed */}
+                    <div className="mb-8">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-red-500">
+                        📌 Unpaid Leave Statistics
+                      </h3>
+                      <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
+                        <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Total Unpaid Days Taken</p>
+                        <p className="text-4xl font-bold text-red-600">{employeeStats.taken_unpaid_leave}</p>
+                        <p className="text-xs text-gray-500 mt-2">This includes all approved unpaid leave</p>
+                      </div>
+                    </div>
+
+                    {/* Monthly Breakdown - Enhanced */}
+                    {employeeStats.monthly_breakdown && employeeStats.monthly_breakdown.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-blue-500">
+                          📅 Monthly Breakdown
+                        </h3>
+                        <div className="overflow-x-auto rounded-lg border border-gray-300">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-300">
+                                <th className="px-4 py-3 text-left font-semibold text-gray-700">Month</th>
+                                <th className="px-4 py-3 text-center font-semibold text-purple-700 bg-purple-50">Paid Days</th>
+                                <th className="px-4 py-3 text-center font-semibold text-red-700 bg-red-50">Unpaid Days</th>
+                                <th className="px-4 py-3 text-center font-semibold text-blue-700 bg-blue-50">Total Days</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {employeeStats.monthly_breakdown.map((month, idx) => (
+                                <tr
+                                  key={idx}
+                                  className="border-b border-gray-200 hover:bg-blue-50 transition"
+                                >
+                                  <td className="px-4 py-3 text-gray-900 font-medium">{month.month}</td>
+                                  <td className="px-4 py-3 text-center">
+                                    <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-semibold text-sm">
+                                      {month.paid}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    <span className={`px-3 py-1 rounded-full font-semibold text-sm ${month.unpaid > 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
+                                      {month.unpaid}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold text-sm">
+                                      {month.total}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Year Summary - Enhanced */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-green-500">
+                        📊 Annual Summary
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">Paid Days (Year)</p>
+                          <p className="text-2xl font-bold text-purple-600 mt-2">{employeeStats.taken_paid_leave}</p>
+                        </div>
+                        <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">Unpaid Days (Year)</p>
+                          <p className="text-2xl font-bold text-red-600 mt-2">{employeeStats.taken_unpaid_leave}</p>
+                        </div>
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">Total Days (Year)</p>
+                          <p className="text-2xl font-bold text-blue-600 mt-2">{employeeStats.total_leaves_taken}</p>
+                        </div>
+                        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">Usage Rate</p>
+                          <p className="text-2xl font-bold text-green-600 mt-2">
+                            {employeeStats.total_paid_leave > 0
+                              ? Math.round((employeeStats.taken_paid_leave / employeeStats.total_paid_leave) * 100)
+                              : 0}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Key Metrics */}
+                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border-l-4 border-indigo-500">
+                      <h4 className="font-semibold text-gray-900 mb-3">Key Metrics</h4>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Monthly Average (Paid):</span>
+                          <span className="font-bold text-gray-900">
+                            {employeeStats.monthly_breakdown && employeeStats.monthly_breakdown.length > 0
+                              ? (employeeStats.taken_paid_leave / employeeStats.monthly_breakdown.length).toFixed(2)
+                              : 0} days
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Days Per Month (Entitlement):</span>
+                          <span className="font-bold text-gray-900">
+                            {(employeeStats.total_paid_leave / 12).toFixed(2)} days
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Download and Close Buttons - Sticky Bottom */}
+                  <div className="flex gap-3 p-6 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                    <Button
+                      onClick={() => downloadAsExcel(employeeStats)}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2"
+                    >
+                      📥 Download as Excel
+                    </Button>
+                    <Button
+                      onClick={() => setShowEmployeeStats(false)}
+                      className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card padding={false}>
             <div className="p-6">

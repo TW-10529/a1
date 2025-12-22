@@ -18,7 +18,8 @@ import {
   getMessages,
   deleteMessage,
   markMessageAsRead,
-  createLeaveRequest
+  createLeaveRequest,
+  getLeaveStatistics
 } from '../services/api';
 import {
   Plus, Clock, CheckCircle, XCircle, ChevronLeft, ChevronRight, Calendar,
@@ -405,12 +406,13 @@ const EmployeeSchedule = () => {
 
 const EmployeeLeaves = ({ user }) => {
   const [leaves, setLeaves] = useState([]);
+  const [leaveStats, setLeaveStats] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [employeeId, setEmployeeId] = useState(null);
   const [formData, setFormData] = useState({
-    leave_type: 'vacation',
+    leave_type: 'paid',
     start_date: '',
     end_date: '',
     reason: ''
@@ -434,6 +436,14 @@ const EmployeeLeaves = ({ user }) => {
       
       const response = await listLeaveRequests();
       setLeaves(response.data);
+      
+      // Fetch leave statistics
+      try {
+        const statsRes = await getLeaveStatistics();
+        setLeaveStats(statsRes.data);
+      } catch (statsError) {
+        console.error('Failed to load leave statistics:', statsError);
+      }
     } catch (error) {
       console.error('Failed to load leave requests:', error);
     } finally {
@@ -456,7 +466,7 @@ const EmployeeLeaves = ({ user }) => {
         employee_id: employeeId
       });
       setShowModal(false);
-      setFormData({ leave_type: 'vacation', start_date: '', end_date: '', reason: '' });
+      setFormData({ leave_type: 'paid', start_date: '', end_date: '', reason: '' });
       loadLeaves();
     } catch (err) {
       let errorMsg = 'Failed to create leave request';
@@ -545,6 +555,59 @@ const EmployeeLeaves = ({ user }) => {
             </div>
           </Card>
         </div>
+
+        {leaveStats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <Card padding={false}>
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Total Paid Leave</p>
+                    <p className="text-3xl font-bold text-purple-600">{leaveStats.total_paid_leave || 0}</p>
+                  </div>
+                  <Calendar className="w-8 h-8 text-purple-600" />
+                </div>
+              </div>
+            </Card>
+            <Card padding={false}>
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Taken Paid Leave</p>
+                    <p className="text-3xl font-bold text-orange-600">{leaveStats.taken_paid_leave || 0}</p>
+                  </div>
+                  <CheckCircle className="w-8 h-8 text-orange-600" />
+                </div>
+              </div>
+            </Card>
+            <Card padding={false}>
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Available Paid Leave</p>
+                    <p className="text-3xl font-bold text-green-600">{leaveStats.available_paid_leave || 0}</p>
+                  </div>
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+              </div>
+            </Card>
+            <Card padding={false}>
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Usage %</p>
+                    <p className="text-3xl font-bold text-blue-600">
+                      {leaveStats.total_paid_leave > 0 
+                        ? Math.round((leaveStats.taken_paid_leave / leaveStats.total_paid_leave) * 100)
+                        : 0}%
+                    </p>
+                  </div>
+                  <AlertCircle className="w-8 h-8 text-blue-600" />
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
         <Card
           title="My Leave Requests"
           subtitle={`${leaves.length} total requests`}
@@ -621,10 +684,8 @@ const EmployeeLeaves = ({ user }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 required
               >
-                <option value="vacation">Vacation</option>
-                <option value="sick">Sick Leave</option>
-                <option value="personal">Personal</option>
-                <option value="emergency">Emergency</option>
+                <option value="paid">Paid Leave</option>
+                <option value="unpaid">Unpaid Leave</option>
               </select>
             </div>
             <div>

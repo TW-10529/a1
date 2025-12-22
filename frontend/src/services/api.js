@@ -119,6 +119,10 @@ export const rejectLeave = (leaveId, reviewNotes) => {
   return api.post(`/manager/reject-leave/${leaveId}`, body);
 };
 
+// Leave Statistics
+export const getLeaveStatistics = () => api.get('/leave-statistics');
+export const getEmployeeLeaveStatistics = (employeeId) => api.get(`/leave-statistics/employee/${employeeId}`);
+
 // Unavailability
 export const createUnavailability = (unavailData) => api.post('/unavailability', unavailData);
 export const listUnavailability = (employeeId = null, startDate = null, endDate = null) => {

@@ -10,12 +10,13 @@ const LeaveManagement = ({ currentUser, departmentId }) => {
   const [employees, setEmployees] = useState([]);
   const [activeTab, setActiveTab] = useState('leaves');
   const [loading, setLoading] = useState(false);
+  const [leaveStats, setLeaveStats] = useState(null);
 
   const [leaveForm, setLeaveForm] = useState({
     employee_id: '',
     start_date: '',
     end_date: '',
-    leave_type: 'vacation',
+    leave_type: 'paid',
     reason: ''
   });
 
@@ -24,13 +25,12 @@ const LeaveManagement = ({ currentUser, departmentId }) => {
     date: '',
     reason: ''
   });
+  const [managerSearchEmpId, setManagerSearchEmpId] = useState('');
+  const [managerLeaveStats, setManagerLeaveStats] = useState(null);
 
   const leaveTypes = [
-    { value: 'vacation', label: 'Vacation' },
-    { value: 'sick', label: 'Sick Leave' },
-    { value: 'personal', label: 'Personal' },
-    { value: 'training', label: 'Training' },
-    { value: 'other', label: 'Other' }
+    { value: 'paid', label: 'Paid Leave' },
+    { value: 'unpaid', label: 'Unpaid Leave' }
   ];
 
   const unavailReasons = [
@@ -61,10 +61,27 @@ const LeaveManagement = ({ currentUser, departmentId }) => {
       // Load unavailability
       const unavailRes = await api.get('/unavailability');
       setUnavailability(unavailRes.data);
+
+      // Load leave statistics for current user (if employee)
+      console.log('Current user:', currentUser, 'Type:', currentUser?.user_type);
+      if (currentUser?.user_type === 'employee') {
+        try {
+          console.log('Fetching leave statistics...');
+          const statsRes = await api.get('/leave-statistics');
+          console.log('Leave stats response:', statsRes.data);
+          setLeaveStats(statsRes.data);
+        } catch (error) {
+          console.error('Could not load leave statistics:', error);
+        }
+      } else {
+        console.log('User is not an employee, skipping leave statistics');
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
     }
   };
 
@@ -76,7 +93,7 @@ const LeaveManagement = ({ currentUser, departmentId }) => {
 
     try {
       await api.post('/leave-requests', leaveForm);
-      setLeaveForm({ employee_id: '', start_date: '', end_date: '', leave_type: 'vacation', reason: '' });
+      setLeaveForm({ employee_id: '', start_date: '', end_date: '', leave_type: 'paid', reason: '' });
       setShowLeaveForm(false);
       await loadData();
     } catch (error) {
@@ -134,6 +151,71 @@ const LeaveManagement = ({ currentUser, departmentId }) => {
     }
   };
 
+  const handleSearchEmployeeLeaves = async (e) => {
+    e.preventDefault();
+    if (!managerSearchEmpId) {
+      alert('Please enter an employee ID');
+      return;
+    }
+
+    try {
+      const statsRes = await api.get(`/leave-statistics/employee/${managerSearchEmpId}`);
+      setManagerLeaveStats(statsRes.data);
+    } catch (error) {
+      console.error('Error fetching leave statistics:', error);
+      alert('Employee not found or error loading statistics');
+      setManagerLeaveStats(null);
+    }
+  };
+
+  const handleDownloadLeaveReport = () => {
+    if (!managerLeaveStats) {
+      alert('Please search for an employee first');
+      return;
+    }
+
+    // Create CSV data with monthly breakdown
+    const csvLines = [
+      ['Employee Leave Report'],
+      [],
+      ['Employee ID', managerLeaveStats.employee_id],
+      ['Employee Name', managerLeaveStats.employee_name],
+      [],
+      ['Leave Summary'],
+      ['Total Paid Leave (Annual)', managerLeaveStats.total_paid_leave],
+      ['Taken Paid Leave', managerLeaveStats.taken_paid_leave],
+      ['Taken Unpaid Leave', managerLeaveStats.taken_unpaid_leave],
+      ['Available Paid Leave', managerLeaveStats.available_paid_leave],
+      ['Total Leaves Taken', managerLeaveStats.total_leaves_taken],
+      [],
+      ['Monthly Breakdown'],
+      ['Month', 'Paid Leave', 'Unpaid Leave', 'Total']
+    ];
+
+    // Add monthly breakdown rows
+    if (managerLeaveStats.monthly_breakdown && managerLeaveStats.monthly_breakdown.length > 0) {
+      managerLeaveStats.monthly_breakdown.forEach(month => {
+        csvLines.push([month.month, month.paid, month.unpaid, month.total]);
+      });
+    }
+
+    csvLines.push([]);
+    csvLines.push(['Generated on', new Date().toLocaleDateString()]);
+
+    const csvContent = csvLines.map(row => row.join(',')).join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leave-report-${managerLeaveStats.employee_id}-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   const getStatusBadge = (status) => {
     const statusMap = {
       pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
@@ -155,6 +237,37 @@ const LeaveManagement = ({ currentUser, departmentId }) => {
 
   return (
     <div className="space-y-6">
+      {/* Leave Statistics Box - Show only for employees */}
+      {currentUser?.user_type === 'employee' && leaveStats && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">Your Leave Summary</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-500">
+              <p className="text-sm text-gray-600 mb-1">Total Annual Paid Leave</p>
+              <p className="text-2xl font-bold text-blue-600">{leaveStats.total_paid_leave}</p>
+              <p className="text-xs text-gray-500 mt-1">days/year</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-orange-500">
+              <p className="text-sm text-gray-600 mb-1">Taken Paid Leave</p>
+              <p className="text-2xl font-bold text-orange-600">{leaveStats.taken_paid_leave}</p>
+              <p className="text-xs text-gray-500 mt-1">days used</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-green-500">
+              <p className="text-sm text-gray-600 mb-1">Available Paid Leave</p>
+              <p className="text-2xl font-bold text-green-600">{leaveStats.available_paid_leave}</p>
+              <p className="text-xs text-gray-500 mt-1">days remaining</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-purple-500">
+              <p className="text-sm text-gray-600 mb-1">Coverage</p>
+              <p className="text-2xl font-bold text-purple-600">
+                {leaveStats.total_paid_leave > 0 ? Math.round((leaveStats.taken_paid_leave / leaveStats.total_paid_leave) * 100) : 0}%
+              </p>
+              <p className="text-xs text-gray-500 mt-1">of annual leave</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex gap-2 border-b">
         <button
@@ -184,6 +297,102 @@ const LeaveManagement = ({ currentUser, departmentId }) => {
       {/* Leave Requests Tab */}
       {activeTab === 'leaves' && (
         <div className="space-y-4">
+          {/* Manager Leave Statistics Search */}
+          {currentUser?.user_type === 'manager' && (
+            <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">Employee Leave Statistics</h3>
+              <form onSubmit={handleSearchEmployeeLeaves} className="flex gap-2 mb-4">
+                <input
+                  type="number"
+                  placeholder="Enter Employee ID"
+                  value={managerSearchEmpId}
+                  onChange={(e) => setManagerSearchEmpId(e.target.value)}
+                  className="flex-1 border rounded px-3 py-2"
+                />
+                <button
+                  type="submit"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                >
+                  Search
+                </button>
+              </form>
+
+              {managerLeaveStats && (
+                <div className="bg-white p-4 rounded-lg border border-indigo-100">
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-lg">{managerLeaveStats.employee_name}</h4>
+                    <p className="text-sm text-gray-600">ID: {managerLeaveStats.employee_id}</p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                    <div className="bg-blue-50 p-3 rounded">
+                      <p className="text-xs text-gray-600">Total Paid Leave</p>
+                      <p className="text-lg font-bold text-blue-600">{managerLeaveStats.total_paid_leave}</p>
+                    </div>
+                    <div className="bg-orange-50 p-3 rounded">
+                      <p className="text-xs text-gray-600">Taken Paid</p>
+                      <p className="text-lg font-bold text-orange-600">{managerLeaveStats.taken_paid_leave}</p>
+                    </div>
+                    <div className="bg-red-50 p-3 rounded">
+                      <p className="text-xs text-gray-600">Taken Unpaid</p>
+                      <p className="text-lg font-bold text-red-600">{managerLeaveStats.taken_unpaid_leave}</p>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded">
+                      <p className="text-xs text-gray-600">Available Paid</p>
+                      <p className="text-lg font-bold text-green-600">{managerLeaveStats.available_paid_leave}</p>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded">
+                      <p className="text-xs text-gray-600">Total Taken</p>
+                      <p className="text-lg font-bold text-purple-600">{managerLeaveStats.total_leaves_taken}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleDownloadLeaveReport}
+                    className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center justify-center gap-2"
+                  >
+                    📥 Download Report (CSV)
+                  </button>
+                  
+                  {/* Monthly Breakdown */}
+                  {managerLeaveStats.monthly_breakdown && managerLeaveStats.monthly_breakdown.length > 0 && (
+                    <div className="mt-6 pt-6 border-t">
+                      <h5 className="font-semibold text-gray-800 mb-3">Monthly Breakdown</h5>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-gray-100 border-b">
+                              <th className="px-3 py-2 text-left">Month</th>
+                              <th className="px-3 py-2 text-center">Paid Leave</th>
+                              <th className="px-3 py-2 text-center">Unpaid Leave</th>
+                              <th className="px-3 py-2 text-center">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {managerLeaveStats.monthly_breakdown.map((month, idx) => (
+                              <tr key={idx} className="border-b hover:bg-gray-50">
+                                <td className="px-3 py-2 font-medium text-gray-700">{month.month}</td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-semibold">
+                                    {month.paid}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">
+                                    {month.unpaid}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-center font-bold">{month.total}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Leave Requests</h3>
             {currentUser?.user_type === 'manager' && (
