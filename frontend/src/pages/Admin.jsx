@@ -476,7 +476,7 @@ const AdminManagers = () => {
             className="flex items-center gap-1 text-red-600 hover:bg-red-50"
           >
             <Trash2 className="w-4 h-4" />
-            Delete
+            {t('delete')}
           </Button>
         </div>
       )
@@ -707,7 +707,7 @@ const AdminManagers = () => {
           onClose={() => {
             setShowCreateConfirm(false);
           }}
-          title="Confirm Create Manager"
+          title={t('confirmDelete')}
           footer={
             <div className="flex justify-end space-x-3">
               <Button
@@ -716,21 +716,21 @@ const AdminManagers = () => {
                   setShowCreateConfirm(false);
                 }}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleSubmit}
                 disabled={submitting}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {submitting ? 'Creating...' : 'Confirm Create'}
+                {submitting ? t('submitting') : t('confirm')}
               </Button>
             </div>
           }
         >
           <div className="space-y-4">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-900 font-medium">Create new manager?</p>
+              <p className="text-green-900 font-medium">{t('createNewUser')}?</p>
             </div>
             <div className="space-y-2 text-sm text-gray-700">
               <p><strong>Username:</strong> {formData.username}</p>
@@ -747,7 +747,7 @@ const AdminManagers = () => {
           onClose={() => {
             setShowReassignConfirm(false);
           }}
-          title="Confirm Reassign Manager"
+          title={t('confirmDelete')}
           footer={
             <div className="flex justify-end space-x-3">
               <Button
@@ -756,21 +756,21 @@ const AdminManagers = () => {
                   setShowReassignConfirm(false);
                 }}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleReassign}
                 disabled={submitting}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                {submitting ? 'Reassigning...' : 'Confirm Reassign'}
+                {submitting ? t('submitting') : t('confirm')}
               </Button>
             </div>
           }
         >
           <div className="space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-blue-900 font-medium">Reassign manager to different department?</p>
+              <p className="text-blue-900 font-medium">{t('reassign')}?</p>
             </div>
             {selectedManager && (
               <div className="space-y-2 text-sm text-gray-700">
@@ -830,7 +830,7 @@ const AdminManagers = () => {
             setNewManagerData(null);
             setError('');
           }}
-          title="Manager Already Assigned"
+          title={t('confirmDelete')}
           footer={
             <div className="flex justify-end space-x-3">
               <Button
@@ -842,14 +842,14 @@ const AdminManagers = () => {
                   setError('');
                 }}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleConfirmReassign}
                 disabled={submitting}
                 className="bg-orange-600 hover:bg-orange-700"
               >
-                {submitting ? 'Reassigning...' : 'Yes, Reassign'}
+                {submitting ? t('submitting') : t('yes')}
               </Button>
             </div>
           }
@@ -904,7 +904,7 @@ const AdminManagers = () => {
             setShowDeleteConfirm(false);
             setDeleteTarget(null);
           }}
-          title="Confirm Delete Manager"
+          title={t('confirmDelete')}
           footer={
             <div className="flex justify-end space-x-3">
               <Button
@@ -914,14 +914,14 @@ const AdminManagers = () => {
                   setDeleteTarget(null);
                 }}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleDeleteManager}
                 disabled={submitting}
                 className="bg-red-600 hover:bg-red-700"
               >
-                {submitting ? 'Deleting...' : 'Delete Manager'}
+                {submitting ? t('submitting') : t('delete')}
               </Button>
             </div>
           }
@@ -929,7 +929,7 @@ const AdminManagers = () => {
           {deleteTarget && (
             <div className="space-y-4">
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-900 font-medium">Are you sure you want to delete this manager?</p>
+                <p className="text-red-900 font-medium">{t('areYouSureDelete')}</p>
               </div>
               <div className="space-y-2 text-sm text-gray-700">
                 <p><strong>Username:</strong> {deleteTarget.username}</p>

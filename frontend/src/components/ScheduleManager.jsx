@@ -661,12 +661,12 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
       <Modal
         isOpen={showWeekPicker}
         onClose={() => setShowWeekPicker(false)}
-        title="Generate Schedule"
+        title={t('generateSchedule')}
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Week to Generate
+              {t('selectWeekToGenerate')}
             </label>
             <input
               type="date"
@@ -680,10 +680,10 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
           </div>
           <div className="flex gap-2 justify-end">
             <Button onClick={() => setShowWeekPicker(false)} variant="ghost">
-              Cancel
+              {t('cancel')}
             </Button>
             <Button onClick={handleGenerateSchedule} variant="primary" disabled={loading}>
-              {loading ? 'Generating...' : 'Generate'}
+              {loading ? t('submitting') : t('generateSchedule')}
             </Button>
           </div>
         </div>
@@ -693,35 +693,35 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
       <Modal
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
-        title="Schedule Details"
+        title={t('scheduleDetails')}
       >
         {selectedSchedule && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-600">Employee</label>
+                <label className="text-sm text-gray-600">{t('employee')}</label>
                 <p className="font-semibold">{getEmployeeName(selectedSchedule.employee_id)}</p>
               </div>
               <div>
-                <label className="text-sm text-gray-600">Role</label>
+                <label className="text-sm text-gray-600">{t('role')}</label>
                 <p className="font-semibold">{getRoleName(selectedSchedule.role_id)}</p>
               </div>
               <div>
-                <label className="text-sm text-gray-600">Date</label>
+                <label className="text-sm text-gray-600">{t('date')}</label>
                 <p className="font-semibold">{selectedSchedule.date}</p>
               </div>
               <div>
-                <label className="text-sm text-gray-600">Time</label>
+                <label className="text-sm text-gray-600">{t('time')}</label>
                 <p className="font-semibold">{selectedSchedule.start_time} - {selectedSchedule.end_time}</p>
               </div>
               <div className="col-span-2">
-                <label className="text-sm text-gray-600">Status</label>
+                <label className="text-sm text-gray-600">{t('status')}</label>
                 <p className="font-semibold capitalize">{selectedSchedule.status}</p>
               </div>
             </div>
             <div className="flex gap-2 justify-end">
               <Button onClick={() => setShowDetailModal(false)} variant="primary">
-                Close
+                {t('close')}
               </Button>
             </div>
           </div>
@@ -733,7 +733,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedLeave(null)}>
           <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Leave Details</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('leaveDetails')}</h2>
               <button
                 onClick={() => setSelectedLeave(null)}
                 className="text-gray-400 hover:text-gray-600"
@@ -746,7 +746,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
             <div className="space-y-4">
               {/* Employee */}
               <div>
-                <p className="text-sm text-gray-600 font-semibold">Employee</p>
+                <p className="text-sm text-gray-600 font-semibold">{t('employee')}</p>
                 <p className="text-lg text-gray-900 font-bold">
                   {selectedLeave.employee?.first_name} {selectedLeave.employee?.last_name}
                 </p>
@@ -754,7 +754,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
 
               {/* Leave Type */}
               <div>
-                <p className="text-sm text-gray-600 font-semibold">Leave Type</p>
+                <p className="text-sm text-gray-600 font-semibold">{t('leaveType')}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className={`inline-block px-3 py-1 rounded-full text-white font-bold text-sm ${
                     selectedLeave.leave_type === 'paid' ? 'bg-blue-600' :
@@ -771,7 +771,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
 
               {/* Duration */}
               <div>
-                <p className="text-sm text-gray-600 font-semibold">Duration</p>
+                <p className="text-sm text-gray-600 font-semibold">{t('duration')}</p>
                 <p className="text-lg text-gray-900 font-bold">
                   {selectedLeave.duration_type === 'half_day_morning' ? '🌅 Half Day (Morning)' :
                    selectedLeave.duration_type === 'half_day_afternoon' ? '🌆 Half Day (Afternoon)' :
@@ -781,7 +781,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
 
               {/* Date Range */}
               <div>
-                <p className="text-sm text-gray-600 font-semibold">Date Range</p>
+                <p className="text-sm text-gray-600 font-semibold">{t('dateRange')}</p>
                 <p className="text-lg text-gray-900 font-bold">
                   {selectedLeave.start_date ? format(parseISO(selectedLeave.start_date), 'MMM dd, yyyy') : 'N/A'} to {selectedLeave.end_date ? format(parseISO(selectedLeave.end_date), 'MMM dd, yyyy') : 'N/A'}
                 </p>
@@ -789,7 +789,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
 
               {/* Status */}
               <div>
-                <p className="text-sm text-gray-600 font-semibold">Status</p>
+                <p className="text-sm text-gray-600 font-semibold">{t('status')}</p>
                 <span className={`inline-block px-3 py-1 rounded-full text-white font-bold text-sm mt-2 ${
                   selectedLeave.status === 'approved' ? 'bg-green-600' :
                   selectedLeave.status === 'rejected' ? 'bg-red-600' :
@@ -802,7 +802,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
               {/* Reason */}
               {selectedLeave.reason && (
                 <div>
-                  <p className="text-sm text-gray-600 font-semibold">Reason</p>
+                  <p className="text-sm text-gray-600 font-semibold">{t('reason')}</p>
                   <p className="text-gray-900">{selectedLeave.reason}</p>
                 </div>
               )}
@@ -810,7 +810,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
               {/* Review Notes */}
               {selectedLeave.review_notes && (
                 <div>
-                  <p className="text-sm text-gray-600 font-semibold">Manager Notes</p>
+                  <p className="text-sm text-gray-600 font-semibold">{t('managerNotes')}</p>
                   <p className="text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{selectedLeave.review_notes}</p>
                 </div>
               )}
@@ -820,7 +820,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
               onClick={() => setSelectedLeave(null)}
               className="w-full mt-6 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-bold"
             >
-              Close
+              {t('close')}
             </button>
           </div>
         </div>

@@ -238,7 +238,7 @@ const ManagerEmployees = ({ user }) => {
       
       // Validate department_id exists
       if (!employeeData.department_id) {
-        setError('⚠️ Department information is missing. Your manager account is not properly configured with a department assignment. Please contact your administrator.');
+        setError(t('deptInfoMissing'));
         return;
       }
       
@@ -248,12 +248,12 @@ const ManagerEmployees = ({ user }) => {
       if (editingEmployee) {
         console.log('Updating employee...');
         response = await updateEmployee(editingEmployee.id, employeeData);
-        setSuccess('✅ Employee updated successfully!');
+        setSuccess(t('employeeUpdatedSuccess'));
       } else {
         console.log('Creating new employee...');
         response = await createEmployee(employeeData);
         console.log('Response:', response);
-        setSuccess('✅ Employee created successfully!');
+        setSuccess(t('employeeCreatedSuccess'));
       }
       
       // Only clear form if response was successful
@@ -284,7 +284,7 @@ const ManagerEmployees = ({ user }) => {
       }
     } catch (err) {
       console.error('Error in handleSubmit:', err);
-      let errorMsg = 'Failed to save employee';
+      let errorMsg = t('failedSaveEmployee');
       
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
@@ -327,19 +327,19 @@ const ManagerEmployees = ({ user }) => {
     if (!employee) return;
 
     let message = isInactive
-      ? 'Are you sure you want to PERMANENTLY DELETE this inactive employee? This cannot be undone.'
-      : 'Are you sure you want to delete this employee?';
+      ? t('permanentlyDeleteInactiveEmployee')
+      : t('confirmDeleteEmployee');
 
     if (window.confirm(message)) {
       try {
         // For inactive employees, use hard delete. For active, use soft delete.
         await deleteEmployee(id, isInactive);
-        const successMsg = isInactive ? '✅ Employee permanently deleted!' : '✅ Employee deleted successfully!';
+        const successMsg = isInactive ? t('employeePermanentlyDeleted') : t('employeeDeletedSuccess');
         setSuccess(successMsg);
         setTimeout(() => setSuccess(''), 3000);
         loadData();  // ← Use loadData to respect showInactive filter
       } catch (error) {
-        setError('Failed to delete employee');
+        setError(t('failedDeleteEmployee'));
         setTimeout(() => setError(''), 3000);
       }
     }
@@ -1016,7 +1016,7 @@ const ManagerRoles = ({ user }) => {
                   {selectedRole?.id === role.id && (
                     <div className="mt-4 pt-4 border-t border-gray-300 space-y-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-700">Shifts ({role.shifts?.length || 0}):</p>
+                        <p className="text-sm font-medium text-gray-700">{t('shiftsLabel')} ({role.shifts?.length || 0}):</p>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={(e) => {
@@ -1037,7 +1037,7 @@ const ManagerRoles = ({ user }) => {
                             className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 text-sm"
                           >
                             <Plus className="w-3 h-3 mr-1 inline" />
-                            Add Shift
+                            {t('addShift')}
                           </Button>
                         </div>
                       </div>
@@ -1051,7 +1051,7 @@ const ManagerRoles = ({ user }) => {
                                   <p className="font-medium text-gray-800">{shift.name}</p>
                                   <p className="text-sm text-gray-600">{shift.start_time} - {shift.end_time}</p>
                                   <p className="text-xs text-gray-500 mt-1">
-                                    Capacity: {shift.min_emp}-{shift.max_emp} employees
+                                    {t('capacity')}: {shift.min_emp}-{shift.max_emp} {t('employees')}
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1085,7 +1085,7 @@ const ManagerRoles = ({ user }) => {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-500 ml-4 italic">No shifts yet. Click "Add Shift" to create one.</p>
+                        <p className="text-sm text-gray-500 ml-4 italic">{t('noShiftsYet')}</p>
                       )}
 
                       {showArchivedShifts && (
@@ -1111,7 +1111,7 @@ const ManagerRoles = ({ user }) => {
                                   <div>
                                     <p className="font-medium text-gray-800">{shift.name}</p>
                                     <p className="text-sm text-gray-600">{shift.start_time} - {shift.end_time}</p>
-                                    <p className="text-xs text-gray-500 mt-1">Capacity: {shift.min_emp}-{shift.max_emp} employees</p>
+                                    <p className="text-xs text-gray-500 mt-1">{t('capacity')}: {shift.min_emp}-{shift.max_emp} {t('employees')}</p>
                                   </div>
                                   <button
                                     onClick={(e) => {
@@ -1220,7 +1220,7 @@ const ManagerRoles = ({ user }) => {
                 onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 rows="3"
-                placeholder="Describe this job role..."
+                placeholder={t('describeJobRole')}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -1247,7 +1247,7 @@ const ManagerRoles = ({ user }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Break Minutes</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('breakMinutes')}</label>
                 <input
                   type="number"
                   min="0"
@@ -1265,12 +1265,12 @@ const ManagerRoles = ({ user }) => {
                     onChange={(e) => setRoleForm({ ...roleForm, weekend_required: e.target.checked })}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-sm font-medium text-gray-700">Weekend Required</span>
+                  <span className="ml-2 text-sm font-medium text-gray-700">{t('weekendRequired')}</span>
                 </label>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Required Skills (comma-separated)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('requiredSkills')}</label>
               <input
                 type="text"
                 value={roleForm.required_skills.join(', ')}
@@ -1279,11 +1279,11 @@ const ManagerRoles = ({ user }) => {
                   required_skills: e.target.value.split(',').map(s => s.trim()).filter(s => s)
                 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder="e.g., Java, Python, SQL"
+                placeholder={t('exampleSkills')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">Operating Days</label>
+              <label className="block text-sm font-medium text-gray-700 mb-3">{t('operatingDays')}</label>
               <div className="grid grid-cols-4 gap-3">
                 {days.map((day) => (
                   <label key={day} className="flex items-center cursor-pointer">
@@ -1299,7 +1299,7 @@ const ManagerRoles = ({ user }) => {
                       })}
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm text-gray-700 capitalize">{day}</span>
+                    <span className="ml-2 text-sm text-gray-700 capitalize">{t(day)}</span>
                   </label>
                 ))}
               </div>
@@ -1468,14 +1468,16 @@ const ManagerRoles = ({ user }) => {
               </div>
             )}
             <p className="text-gray-700">
-              Are you sure you want to delete the {deleteTarget?.type} <strong>{deleteTarget?.name}</strong>?
+              {deleteTarget?.type === 'role' 
+                ? t('confirmDeleteRoleMessage', { name: deleteTarget?.name })
+                : t('confirmDeleteShiftMessage', { name: deleteTarget?.name })}
             </p>
             <p className="text-sm text-gray-600">
               {deleteTarget?.type === 'role'
-                ? 'All shifts under this role will be marked as inactive.'
+                ? t('deleteRoleWarning')
                 : deleteTarget?.hardDelete
-                  ? 'This archived shift will be permanently removed from the system.'
-                  : 'This shift will be marked as inactive.'}
+                  ? t('deleteArchivedShiftWarning')
+                  : t('deleteShiftWarning')}
             </p>
           </div>
         </Modal>
@@ -1902,9 +1904,16 @@ const ManagerLeaves = () => {
       approved: 'bg-green-100 text-green-800',
       rejected: 'bg-red-100 text-red-800'
     };
+    
+    const statusLabels = {
+      pending: t('pending'),
+      approved: t('approved'),
+      rejected: t('rejected')
+    };
+    
     return (
       <span className={`px-2 py-1 rounded-full text-xs ${colors[status] || 'bg-gray-100 text-gray-800'}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {statusLabels[status] || status}
       </span>
     );
   };
@@ -2683,7 +2692,7 @@ const ManagerAttendance = ({ user }) => {
 
   const downloadEmployeeMonthly = async () => {
     if (!employeeIdInput) {
-      alert('Please enter an Employee ID');
+      alert(t('pleaseEnterEmployeeID'));
       return;
     }
 
@@ -2715,7 +2724,7 @@ const ManagerAttendance = ({ user }) => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Failed to download employee report');
+      alert(t('failedDownloadReport'));
     } finally {
       setEmpDownloading(false);
     }
@@ -2969,19 +2978,19 @@ const ManagerAttendance = ({ user }) => {
         <Modal 
           isOpen={showMonthlyModal} 
           onClose={() => setShowMonthlyModal(false)}
-          title="Download Monthly Report"
+          title={t('downloadMonthlyReport')}
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Employee Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('selectEmployeeType')}</label>
               <select
                 value={selectedEmploymentType}
                 onChange={(e) => setSelectedEmploymentType(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Employees</option>
-                <option value="full_time">Full-Time Only</option>
-                <option value="part_time">Part-Time Only</option>
+                <option value="">{t('allEmployees')}</option>
+                <option value="full_time">{t('fullTimeOnly')}</option>
+                <option value="part_time">{t('partTimeOnly')}</option>
               </select>
             </div>
             <div className="flex gap-2 justify-end">
@@ -2989,7 +2998,7 @@ const ManagerAttendance = ({ user }) => {
                 onClick={() => setShowMonthlyModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={() => {
@@ -2998,7 +3007,7 @@ const ManagerAttendance = ({ user }) => {
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
               >
-                Download
+                {t('downloadButton')}
               </button>
             </div>
           </div>
@@ -3008,19 +3017,19 @@ const ManagerAttendance = ({ user }) => {
         <Modal 
           isOpen={showWeeklyModal} 
           onClose={() => setShowWeeklyModal(false)}
-          title="Download Weekly Report"
+          title={t('downloadWeeklyReport')}
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Employee Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('selectEmployeeType')}</label>
               <select
                 value={selectedEmploymentType}
                 onChange={(e) => setSelectedEmploymentType(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Employees</option>
-                <option value="full_time">Full-Time Only</option>
-                <option value="part_time">Part-Time Only</option>
+                <option value="">{t('allEmployees')}</option>
+                <option value="full_time">{t('fullTimeOnly')}</option>
+                <option value="part_time">{t('partTimeOnly')}</option>
               </select>
             </div>
             <div className="flex gap-2 justify-end">
@@ -3028,7 +3037,7 @@ const ManagerAttendance = ({ user }) => {
                 onClick={() => setShowWeeklyModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={() => {
@@ -3037,7 +3046,7 @@ const ManagerAttendance = ({ user }) => {
                 }}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
               >
-                Download
+                {t('downloadButton')}
               </button>
             </div>
           </div>
@@ -3087,7 +3096,7 @@ const ManagerMessages = ({ user }) => {
     try {
       const recipientId = formData.sendToAll ? null : (formData.recipient_id ? parseInt(formData.recipient_id) : null);
       if (!formData.sendToAll && !recipientId) {
-        setError('Please select an employee or check "Send to all department employees"');
+        setError(t('selectEmployeeOrSendAll'));
         return;
       }
       await sendMessage({
@@ -3105,17 +3114,17 @@ const ManagerMessages = ({ user }) => {
       });
       loadData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to send message');
+      setError(err.response?.data?.detail || t('failedSendMessage'));
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this message?')) {
+    if (window.confirm(t('confirmDeleteMessage'))) {
       try {
         await deleteMessage(id);
         loadData();
       } catch (error) {
-        alert('Failed to delete message');
+        alert(t('failedDeleteMessage'));
       }
     }
   };
@@ -3263,7 +3272,7 @@ const ManagerMessages = ({ user }) => {
           footer={
             <div className="flex justify-end space-x-3">
               <Button variant="outline" onClick={() => setShowModal(false)}>
-                Cancel
+                {t('cancel')}
               </Button>
               <Button type="submit" form="message-form">
                 <Send className="w-4 h-4 mr-2 inline" />
@@ -3287,19 +3296,19 @@ const ManagerMessages = ({ user }) => {
                   onChange={(e) => setFormData({ ...formData, sendToAll: e.target.checked })}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm font-medium text-gray-700">Send to all department employees</span>
+                <span className="text-sm font-medium text-gray-700">{t('sendToAllDeptEmployees')}</span>
               </label>
             </div>
             {!formData.sendToAll && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Recipient</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipient')}</label>
                 <select
                   value={formData.recipient_id}
                   onChange={(e) => setFormData({ ...formData, recipient_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   required={!formData.sendToAll}
                 >
-                  <option value="">Select employee</option>
+                  <option value="">{t('selectEmployee')}</option>
                   {employees.map((S) => (
                     <option value={S.user_id} key={S.id}>{S.first_name} {S.last_name} ({S.email})</option>
                   ))}
@@ -3307,24 +3316,24 @@ const ManagerMessages = ({ user }) => {
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('subject')}</label>
               <input
                 type="text"
                 value={formData.subject}
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder="Message subject"
+                placeholder={t('messageSubject')}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('message')}</label>
               <textarea
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 rows="5"
-                placeholder="Type your message here..."
+                placeholder={t('typeMessageHere')}
                 required
               />
             </div>
