@@ -405,8 +405,8 @@ const ManagerEmployees = ({ user }) => {
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">{t('allTypes')}</option>
-                <option value="full_time">Full-Time</option>
-                <option value="part_time">Part-Time</option>
+                <option value="full_time">{t('fullTime')}</option>
+                <option value="part_time">{t('partTime')}</option>
               </select>
               <label className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                 <input
@@ -433,7 +433,7 @@ const ManagerEmployees = ({ user }) => {
           footer={
             <div className="flex justify-end space-x-3">
               <Button variant="outline" onClick={() => { setShowModal(false); setEditingEmployee(null); }}>
-                Cancel
+                {t('cancel')}
               </Button>
               <Button type="submit" form="employee-form">
                 {editingEmployee ? t('updateButtonLabel') : t('createButtonLabel')} {t('employee')}
@@ -478,13 +478,13 @@ const ManagerEmployees = ({ user }) => {
                 required
               />
             </div>
-            {formData.email && (
+                {formData.email && (
               <div className="space-y-2">
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>Login Username:</strong> <code className="font-mono">{formData.email.split('@')[0]}</code>
+                    <strong>{t('loginUsername')}</strong> <code className="font-mono">{formData.email.split('@')[0]}</code>
                   </p>
-                  <p className="text-xs text-blue-600 mt-1">Employee will use this username to login along with their password</p>
+                  <p className="text-xs text-blue-600 mt-1">{t('employeeWillUseThisUsername')}</p>
                 </div>
                 {editingEmployee && editingEmployee.employee_id && (
                   <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -498,7 +498,7 @@ const ManagerEmployees = ({ user }) => {
             )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password {!editingEmployee && <span className="text-red-500">*</span>}
+                {t('password')} {!editingEmployee && <span className="text-red-500">*</span>}
               </label>
               <input
                 type="password"
@@ -514,7 +514,7 @@ const ManagerEmployees = ({ user }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('role')} ({t('optional')})</label>
                 <select
                   value={formData.role_id || ''}
                   onChange={(e) => setFormData({ ...formData, role_id: e.target.value ? parseInt(e.target.value) : null })}
@@ -534,6 +534,7 @@ const ManagerEmployees = ({ user }) => {
                   type="date"
                   value={formData.hire_date}
                   onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
+                  placeholder={t('dateFormatPlaceholder')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
@@ -545,17 +546,17 @@ const ManagerEmployees = ({ user }) => {
                 onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               >
-                <option value="full_time">Full-Time (Monthly Cycle: 1-30)</option>
-                <option value="part_time">Part-Time (Cycle: 15th to 15th)</option>
+                <option value="full_time">{t('fullTimeMonthly')}</option>
+                <option value="part_time">{t('partTimeHalfMonth')}</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                Full-time: Attendance and leave on monthly cycle (1st - 30th)
+                {t('monthlyAttendanceCycle')}
                 <br />
-                Part-time: Attendance and leave cycle is 15th of current month to 15th of next month
+                {t('partTimeCycle')}
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('phone')}</label>
               <input
                 type="tel"
                 value={formData.phone}
@@ -564,7 +565,7 @@ const ManagerEmployees = ({ user }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')}</label>
               <textarea
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -613,10 +614,10 @@ const ManagerEmployees = ({ user }) => {
                 onChange={(e) => setFormData({ ...formData, paid_leave_per_year: parseInt(e.target.value) })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               />
-              <p className="text-xs text-gray-500 mt-1">Total paid leave days employee can use per year (carries over to next year)</p>
+              <p className="text-xs text-gray-500 mt-1">{t('annualPaidLeaveHelp')}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Skills (comma-separated)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('skillsCommaSeparated')}</label>
               <input
                 type="text"
                 value={Array.isArray(formData.skills) ? formData.skills.join(', ') : formData.skills}
@@ -2587,6 +2588,7 @@ const ManagerAttendance = ({ user }) => {
   const { t } = useLanguage();
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [roles, setRoles] = useState([]);
   const monthKeys = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
   const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const [stats, setStats] = useState({ present: 0, late: 0, absent: 0 });
@@ -2602,6 +2604,15 @@ const ManagerAttendance = ({ user }) => {
 
   useEffect(() => {
     loadAttendance();
+    // load roles so we can resolve role names when schedule.role object is not included
+    (async () => {
+      try {
+        const res = await listRoles();
+        setRoles(res.data || []);
+      } catch (err) {
+        console.error('Failed to load roles for attendance view:', err);
+      }
+    })();
   }, []);
 
   const loadAttendance = async () => {
@@ -2932,7 +2943,7 @@ const ManagerAttendance = ({ user }) => {
                           {record.employee?.first_name} {record.employee?.last_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {record.schedule?.role?.name || 'N/A'}
+                          {record.schedule?.role?.name || (record.schedule?.role_id ? (roles.find(r => r.id == record.schedule.role_id)?.name || 'N/A') : 'N/A')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           {record.schedule ? `${record.schedule.start_time} - ${record.schedule.end_time}` : '-'}

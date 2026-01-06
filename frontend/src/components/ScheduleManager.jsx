@@ -437,7 +437,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
                 variant="ghost"
               >
                 <X className="w-4 h-4 mr-2 inline" />
-                Cancel
+                {t('cancel')}
               </Button>
             </div>
           )
@@ -534,14 +534,14 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
                           {onLeave && (
                             <div className="text-center py-3">
                               <div className={`font-bold text-sm ${isCompOff ? 'text-purple-700' : 'text-red-700'}`}>
-                                {isCompOff ? '🏥 COMP-OFF' : 'LEAVE'}
+                                {isCompOff ? '🏥 COMP-OFF' : t('leaveBanner')}
                               </div>
                               <div className={`text-xs mt-1 ${isCompOff ? 'text-purple-600' : 'text-red-600'}`}>
                                 {leaveData?.duration_type === 'half_day_morning'
                                   ? '🌅 Half Day (AM)'
                                   : leaveData?.duration_type === 'half_day_afternoon'
                                   ? '🌆 Half Day (PM)'
-                                  : isCompOff ? 'Comp-Off Usage' : 'Approved Time Off'}
+                                  : isCompOff ? t('compOffUsage') : t('approvedTimeOff')}
                               </div>
                               {isCompOff && daySchedules.length > 0 && daySchedules[0]?.start_time && daySchedules[0]?.end_time && (
                                 <div className={`text-xs mt-2 px-2 py-1 rounded bg-purple-100 ${isCompOff ? 'text-purple-700' : 'text-red-700'}`}>

@@ -22,6 +22,7 @@ import {
   checkUsernameAvailable,
   createManager,
   listManagers,
+  listRoles,
   updateManager,
   reassignManager,
   deleteManager,
@@ -539,13 +540,13 @@ const AdminManagers = () => {
                   setSelectedDeptInfo(null);
                 }}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleSubmit}
                 disabled={submitting || !formData.username?.trim() || !formData.password?.trim() || !formData.email?.trim() || !formData.full_name?.trim() || !selectedDeptInfo}
               >
-                {submitting ? 'Creating...' : 'Create Manager'}
+                {submitting ? t('creating') : t('createManager')}
               </Button>
             </div>
           }
@@ -558,7 +559,7 @@ const AdminManagers = () => {
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('username')}</label>
               <input
                 type="text"
                 value={formData.username}
@@ -569,7 +570,7 @@ const AdminManagers = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('password')}</label>
               <input
                 type="password"
                 value={formData.password}
@@ -580,7 +581,7 @@ const AdminManagers = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fullName')}</label>
               <input
                 type="text"
                 value={formData.full_name}
@@ -591,7 +592,7 @@ const AdminManagers = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('email')}</label>
               <input
                 type="email"
                 value={formData.email}
@@ -602,7 +603,7 @@ const AdminManagers = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Department (Search by ID or Name)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('departmentSearchLabel')}</label>
               <div className="relative">
                 <input
                   type="text"
@@ -610,7 +611,7 @@ const AdminManagers = () => {
                   onChange={(e) => handleDeptSearch(e.target.value)}
                   onFocus={() => deptSearchQuery && setShowDeptSearch(true)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  placeholder="Search by department name, code, or ID (e.g., 'Assembly', '001', or '1')"
+                  placeholder={t('departmentSearchPlaceholder')}
                   disabled={submitting}
                 />
                 {selectedDeptInfo && (
@@ -648,7 +649,7 @@ const AdminManagers = () => {
             setReassignError('');
             setSelectedManager(null);
           }}
-          title={`Reassign ${selectedManager?.full_name || 'Manager'}`}
+          title={`${t('reassign')} ${selectedManager?.full_name || t('manager')}`}
           footer={
             <div className="flex justify-end space-x-3">
               <Button
@@ -659,13 +660,13 @@ const AdminManagers = () => {
                   setSelectedManager(null);
                 }}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleReassign}
                 disabled={submitting}
               >
-                {submitting ? 'Reassigning...' : 'Reassign Manager'}
+                {submitting ? t('reassigning') : t('reassignManager')}
               </Button>
             </div>
           }
@@ -680,11 +681,11 @@ const AdminManagers = () => {
             <form onSubmit={handleReassign} className="space-y-4">
               <div className="bg-blue-50 p-3 rounded-lg mb-4">
                 <p className="text-sm text-gray-700">
-                  <strong>Manager:</strong> {selectedManager.full_name}
+                  <strong>{t('manager')}:</strong> {selectedManager.full_name}
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Department</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('assignToDepartment')}</label>
                 <select
                   value={reassignData.department_id}
                   onChange={(e) => setReassignData({ department_id: e.target.value })}
@@ -733,10 +734,10 @@ const AdminManagers = () => {
               <p className="text-green-900 font-medium">{t('createNewUser')}?</p>
             </div>
             <div className="space-y-2 text-sm text-gray-700">
-              <p><strong>Username:</strong> {formData.username}</p>
-              <p><strong>Full Name:</strong> {formData.full_name}</p>
-              <p><strong>Email:</strong> {formData.email}</p>
-              <p><strong>Department:</strong> {selectedDeptInfo?.name}</p>
+              <p><strong>{t('username')}:</strong> {formData.username}</p>
+              <p><strong>{t('fullName')}:</strong> {formData.full_name}</p>
+              <p><strong>{t('email')}:</strong> {formData.email}</p>
+              <p><strong>{t('department')}:</strong> {selectedDeptInfo?.name}</p>
             </div>
           </div>
         </Modal>
@@ -774,9 +775,9 @@ const AdminManagers = () => {
             </div>
             {selectedManager && (
               <div className="space-y-2 text-sm text-gray-700">
-                <p><strong>Manager:</strong> {selectedManager.full_name}</p>
-                <p><strong>Current Department:</strong> {departments.find(d => d.id === selectedManager.department_id)?.name}</p>
-                <p><strong>New Department:</strong> {reassignData.department_id ? departments.find(d => d.id === parseInt(reassignData.department_id))?.name : 'Unassigned'}</p>
+                <p><strong>{t('manager')}:</strong> {selectedManager.full_name}</p>
+                <p><strong>{t('currentDepartment') || 'Current Department'}:</strong> {departments.find(d => d.id === selectedManager.department_id)?.name}</p>
+                <p><strong>{t('newDepartment') || 'New Department'}:</strong> {reassignData.department_id ? departments.find(d => d.id === parseInt(reassignData.department_id))?.name : t('unassigned') || 'Unassigned'}</p>
               </div>
             )}
           </div>
@@ -797,14 +798,14 @@ const AdminManagers = () => {
                   setShowReassignWarning(false);
                 }}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleReassignForce}
                 disabled={submitting}
                 className="bg-orange-600 hover:bg-orange-700"
               >
-                {submitting ? 'Reassigning...' : 'Yes, Reassign'}
+                {submitting ? t('reassigning') : t('yesReassign')}
               </Button>
             </div>
           }
@@ -932,13 +933,13 @@ const AdminManagers = () => {
                 <p className="text-red-900 font-medium">{t('areYouSureDelete')}</p>
               </div>
               <div className="space-y-2 text-sm text-gray-700">
-                <p><strong>Username:</strong> {deleteTarget.username}</p>
-                <p><strong>Name:</strong> {deleteTarget.full_name}</p>
-                <p><strong>Email:</strong> {deleteTarget.email}</p>
+                <p><strong>{t('username')}:</strong> {deleteTarget.username}</p>
+                <p><strong>{t('name')}:</strong> {deleteTarget.full_name}</p>
+                <p><strong>{t('email')}:</strong> {deleteTarget.email}</p>
               </div>
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                 <p className="text-sm text-yellow-900">
-                  ⚠️ This action will remove the manager from all assigned departments but will not delete the departments themselves.
+                  {t('deleteManagerWarning')}
                 </p>
               </div>
             </div>
@@ -958,6 +959,7 @@ const AdminDepartments = () => {
   const [selectedDept, setSelectedDept] = useState(null);
   const [deptDetails, setDeptDetails] = useState(null);
   const [attendance, setAttendance] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -980,6 +982,18 @@ const AdminDepartments = () => {
 
   useEffect(() => {
     loadDepartments();
+  }, []);
+
+  useEffect(() => {
+    // load roles so we can resolve role names when schedule.role object is not provided
+    (async () => {
+      try {
+        const res = await listRoles();
+        setRoles(res.data || []);
+      } catch (err) {
+        console.error('Failed to load roles for admin departments view:', err);
+      }
+    })();
   }, []);
 
   const loadDepartments = async () => {
@@ -1103,7 +1117,7 @@ const AdminDepartments = () => {
 
   const downloadEmployeeMonthly = async () => {
     if (!employeeIdInput) {
-      alert('Please enter an Employee ID');
+      alert(t('pleaseEnterEmployeeID'));
       return;
     }
 
@@ -1661,7 +1675,7 @@ const AdminDepartments = () => {
                                     {record.employee?.first_name} {record.employee?.last_name}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    {record.schedule?.role?.name || 'N/A'}
+                                    {record.schedule?.role?.name || (record.schedule?.role_id ? (roles.find(r => r.id == record.schedule.role_id)?.name || 'N/A') : 'N/A')}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                                     {record.schedule ? `${record.schedule.start_time} - ${record.schedule.end_time}` : '-'}
@@ -1727,7 +1741,7 @@ const AdminDepartments = () => {
               description: ''
             });
           }}
-          title="Add New Department"
+          title={t('addNewDepartment')}
           footer={
             <div className="flex justify-end space-x-3">
               <Button
@@ -1742,13 +1756,13 @@ const AdminDepartments = () => {
                   });
                 }}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={handleAddDepartment}
                 disabled={submitting || !formData.dept_id?.trim() || !formData.name?.trim()}
               >
-                {submitting ? 'Creating...' : 'Create Department'}
+                {submitting ? t('creating') : t('createDepartment')}
               </Button>
             </div>
           }
@@ -1761,35 +1775,35 @@ const AdminDepartments = () => {
           )}
           <form onSubmit={handleAddDepartment} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Department ID</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('departmentId')}</label>
               <input
                 type="text"
                 value={formData.dept_id}
                 onChange={(e) => setFormData({ ...formData, dept_id: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder="e.g., 001, 002, 003"
+                placeholder={t('departmentIdPlaceholder')}
                 disabled={submitting}
               />
-              <p className="text-xs text-gray-500 mt-1">3-digit department identifier (e.g., 001)</p>
+              <p className="text-xs text-gray-500 mt-1">{t('departmentIdHelp')}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Department Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('departmentName')}</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder="e.g., Engineering, Sales, HR"
+                placeholder={t('departmentNamePlaceholder')}
                 disabled={submitting}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('descriptionOptional')}</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder="Enter department description..."
+                placeholder={t('descriptionPlaceholder')}
                 rows="3"
                 disabled={submitting}
               />
