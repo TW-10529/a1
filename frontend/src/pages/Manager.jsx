@@ -491,7 +491,7 @@ const ManagerEmployees = ({ user }) => {
                     <p className="text-sm text-green-800">
                       <strong>Employee ID:</strong> <code className="font-mono">{editingEmployee.employee_id}</code>
                     </p>
-                    <p className="text-xs text-green-600 mt-1">Unique 5-digit employee identifier</p>
+                    <p className="text-xs text-green-600 mt-1">{t('uniqueEmployeeIdentifier')}</p>
                   </div>
                 )}
               </div>
@@ -505,11 +505,11 @@ const ManagerEmployees = ({ user }) => {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder={editingEmployee ? "Leave blank to keep current password" : "Enter initial password"}
+                placeholder={editingEmployee ? t('leaveBlankToKeepPassword') : t('enterInitialPassword')}
                 required={!editingEmployee}
               />
               {editingEmployee && (
-                <p className="text-xs text-gray-500 mt-1">Leave blank to keep the current password</p>
+                <p className="text-xs text-gray-500 mt-1">{t('leaveBlankToKeepCurrentPassword')}</p>
               )}
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -1587,7 +1587,7 @@ const ManagerLeaves = () => {
       setShowEmployeeStats(true);
     } catch (error) {
       console.error('Failed to load employee leave statistics:', error);
-      alert('Employee not found or error loading data');
+      alert(t('employeeNotFoundOrError'));
     }
   };
 
@@ -2024,30 +2024,30 @@ const ManagerLeaves = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">{employeeStats.employee_name}</h3>
-                  <p className="text-sm text-gray-600">Employee ID: {employeeStats.employee_id}</p>
+                  <p className="text-sm text-gray-600">{t('employeeId')}: {employeeStats.employee_id}</p>
                 </div>
-                <Button onClick={() => setShowEmployeeStats(true)}>View Full Details</Button>
+                <Button onClick={() => setShowEmployeeStats(true)}>{t('viewFullDetails')}</Button>
               </div>
             </Card>
 
             {/* Quick Stats Cards - Leave */}
             <div className="mb-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">📅 Leave Summary</h4>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">📅 {t('leaveSummary')}</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                  <p className="text-xs text-gray-600 mb-1">Total Paid Leave</p>
+                  <p className="text-xs text-gray-600 mb-1">{t('totalPaidLeave')}</p>
                   <p className="text-2xl font-bold text-purple-600">{employeeStats.total_paid_leave}</p>
                 </div>
                 <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                  <p className="text-xs text-gray-600 mb-1">Taken (Paid)</p>
+                  <p className="text-xs text-gray-600 mb-1">{t('takenPaid')}</p>
                   <p className="text-2xl font-bold text-orange-600">{employeeStats.taken_paid_leave}</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-xs text-gray-600 mb-1">Available (Paid)</p>
+                  <p className="text-xs text-gray-600 mb-1">{t('availablePaid')}</p>
                   <p className="text-2xl font-bold text-green-600">{employeeStats.available_paid_leave}</p>
                 </div>
                 <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                  <p className="text-xs text-gray-600 mb-1">Taken (Unpaid)</p>
+                  <p className="text-xs text-gray-600 mb-1">{t('takenUnpaid')}</p>
                   <p className="text-2xl font-bold text-red-600">{employeeStats.taken_unpaid_leave}</p>
                 </div>
               </div>
@@ -2060,17 +2060,17 @@ const ManagerLeaves = () => {
                 <div className="p-4 bg-cyan-50 rounded-lg border border-cyan-200 border-l-4">
                   <p className="text-xs text-gray-600 mb-1">{t('compOffEarned')}</p>
                   <p className="text-2xl font-bold text-cyan-600">{employeeStats.comp_off_earned || 0}</p>
-                  <p className="text-xs text-gray-500 mt-1">total days</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('totalDaysEarned')}</p>
                 </div>
                 <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 border-l-4">
                   <p className="text-xs text-gray-600 mb-1">{t('compOffUsed')}</p>
                   <p className="text-2xl font-bold text-amber-600">{employeeStats.comp_off_used || 0}</p>
-                  <p className="text-xs text-gray-500 mt-1">days taken</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('daysTaken')}</p>
                 </div>
                 <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200 border-l-4">
                   <p className="text-xs text-gray-600 mb-1">{t('compOffAvailable')}</p>
                   <p className="text-2xl font-bold text-emerald-600">{employeeStats.comp_off_available || 0}</p>
-                  <p className="text-xs text-gray-500 mt-1">days remaining</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('daysRemaining')}</p>
                 </div>
               </div>
             </div>
@@ -2083,8 +2083,8 @@ const ManagerLeaves = () => {
                   <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 flex justify-between items-center rounded-t-lg">
                     <div>
                       <h2 className="text-2xl font-bold">{employeeStats.employee_name}</h2>
-                      <p className="text-sm text-blue-100">Employee ID: {employeeStats.employee_id}</p>
-                      <p className="text-xs text-blue-200 mt-1">Generated on {new Date().toLocaleDateString()}</p>
+                      <p className="text-sm text-blue-100">{t('employeeId')}: {employeeStats.employee_id}</p>
+                      <p className="text-xs text-blue-200 mt-1">{t('generatedOn')} {new Date().toLocaleDateString()}</p>
                     </div>
                     <button
                       onClick={() => setShowEmployeeStats(false)}
@@ -2099,30 +2099,30 @@ const ManagerLeaves = () => {
                     {/* Paid Leave Statistics - Detailed */}
                     <div className="mb-8">
                       <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-purple-500">
-                        📋 Paid Leave Statistics
+                        📋 {t('paidLeaveStatistics')}
                       </h3>
                       <div className="grid grid-cols-3 gap-4 mb-6">
                         <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
-                          <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Total Annual Entitlement</p>
+                          <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">{t('totalAnnualEntitlement')}</p>
                           <p className="text-4xl font-bold text-purple-600">{employeeStats.total_paid_leave}</p>
-                          <p className="text-xs text-gray-500 mt-1">days per year</p>
+                          <p className="text-xs text-gray-500 mt-1">{t('daysPerYear')}</p>
                         </div>
                         <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
-                          <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Days Taken</p>
+                          <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">{t('daysTaken')}</p>
                           <p className="text-4xl font-bold text-orange-600">{employeeStats.taken_paid_leave}</p>
-                          <p className="text-xs text-gray-500 mt-1">days utilized</p>
+                          <p className="text-xs text-gray-500 mt-1">{t('daysUtilized')}</p>
                         </div>
                         <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                          <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Days Available</p>
+                          <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">{t('daysAvailable')}</p>
                           <p className="text-4xl font-bold text-green-600">{employeeStats.available_paid_leave}</p>
-                          <p className="text-xs text-gray-500 mt-1">days remaining</p>
+                          <p className="text-xs text-gray-500 mt-1">{t('daysRemaining')}</p>
                         </div>
                       </div>
 
                       {/* Progress Bar */}
                       <div className="bg-gray-50 p-4 rounded-lg mb-3">
                         <div className="flex justify-between items-center mb-2">
-                          <p className="text-sm font-semibold text-gray-700">Usage Progress</p>
+                          <p className="text-sm font-semibold text-gray-700">{t('usageProgress')}</p>
                           <p className="text-sm font-bold text-purple-600">
                             {employeeStats.total_paid_leave > 0
                               ? Math.round((employeeStats.taken_paid_leave / employeeStats.total_paid_leave) * 100)
@@ -2140,7 +2140,7 @@ const ManagerLeaves = () => {
                           ></div>
                         </div>
                         <p className="text-xs text-gray-600 mt-2">
-                          {employeeStats.taken_paid_leave} / {employeeStats.total_paid_leave} days used
+                          {employeeStats.taken_paid_leave} / {employeeStats.total_paid_leave} {t('daysUsed')}
                         </p>
                       </div>
                     </div>
@@ -2148,12 +2148,12 @@ const ManagerLeaves = () => {
                     {/* Unpaid Leave Statistics - Detailed */}
                     <div className="mb-8">
                       <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-red-500">
-                        📌 Unpaid Leave Statistics
+                        📌 {t('unpaidLeaveStatistics')}
                       </h3>
                       <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
-                        <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Total Unpaid Days Taken</p>
+                        <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">{t('totalUnpaidDaysTaken')}</p>
                         <p className="text-4xl font-bold text-red-600">{employeeStats.taken_unpaid_leave}</p>
-                        <p className="text-xs text-gray-500 mt-2">This includes all approved unpaid leave</p>
+                        <p className="text-xs text-gray-500 mt-2">{t('includesAllApprovedUnpaidLeave')}</p>
                       </div>
                     </div>
 
@@ -2166,17 +2166,17 @@ const ManagerLeaves = () => {
                         <div className="p-4 bg-cyan-50 rounded-lg border-l-4 border-cyan-500">
                           <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">{t('compOffEarned')}</p>
                           <p className="text-4xl font-bold text-cyan-600">{employeeStats.comp_off_earned || 0}</p>
-                          <p className="text-xs text-gray-500 mt-1">total days earned</p>
+                          <p className="text-xs text-gray-500 mt-1">{t('totalDaysEarned')}</p>
                         </div>
                         <div className="p-4 bg-amber-50 rounded-lg border-l-4 border-amber-500">
                           <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">{t('compOffUsed')}</p>
                           <p className="text-4xl font-bold text-amber-600">{employeeStats.comp_off_used || 0}</p>
-                          <p className="text-xs text-gray-500 mt-1">days utilized</p>
+                          <p className="text-xs text-gray-500 mt-1">{t('daysUtilized')}</p>
                         </div>
                         <div className="p-4 bg-emerald-50 rounded-lg border-l-4 border-emerald-500">
                           <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">{t('compOffAvailable')}</p>
                           <p className="text-4xl font-bold text-emerald-600">{employeeStats.comp_off_available || 0}</p>
-                          <p className="text-xs text-gray-500 mt-1">days remaining</p>
+                          <p className="text-xs text-gray-500 mt-1">{t('daysRemaining')}</p>
                         </div>
                       </div>
 
@@ -2184,7 +2184,7 @@ const ManagerLeaves = () => {
                       {employeeStats.comp_off_earned > 0 && (
                         <div className="bg-gray-50 p-4 rounded-lg mb-3">
                           <div className="flex justify-between items-center mb-2">
-                            <p className="text-sm font-semibold text-gray-700">Usage Progress</p>
+                            <p className="text-sm font-semibold text-gray-700">{t('usageProgress')}</p>
                             <p className="text-sm font-bold text-cyan-600">
                               {employeeStats.comp_off_earned > 0
                                 ? Math.round((employeeStats.comp_off_used / employeeStats.comp_off_earned) * 100)
@@ -2202,7 +2202,7 @@ const ManagerLeaves = () => {
                             ></div>
                           </div>
                           <p className="text-xs text-gray-600 mt-2">
-                            {employeeStats.comp_off_used} / {employeeStats.comp_off_earned} days used
+                            {employeeStats.comp_off_used} / {employeeStats.comp_off_earned} {t('daysUsed')}
                           </p>
                         </div>
                       )}
@@ -2212,16 +2212,16 @@ const ManagerLeaves = () => {
                     {employeeStats.monthly_breakdown && employeeStats.monthly_breakdown.length > 0 && (
                       <div className="mb-8">
                         <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-blue-500">
-                          📅 Monthly Breakdown
+                          📅 {t('monthlyBreakdown')}
                         </h3>
                         <div className="overflow-x-auto rounded-lg border border-gray-300">
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-300">
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">Month</th>
-                                <th className="px-4 py-3 text-center font-semibold text-purple-700 bg-purple-50">Paid Days</th>
-                                <th className="px-4 py-3 text-center font-semibold text-red-700 bg-red-50">Unpaid Days</th>
-                                <th className="px-4 py-3 text-center font-semibold text-blue-700 bg-blue-50">Total Days</th>
+                                <th className="px-4 py-3 text-left font-semibold text-gray-700">{t('month')}</th>
+                                <th className="px-4 py-3 text-center font-semibold text-purple-700 bg-purple-50">{t('paidDays')}</th>
+                                <th className="px-4 py-3 text-center font-semibold text-red-700 bg-red-50">{t('unpaidDays')}</th>
+                                <th className="px-4 py-3 text-center font-semibold text-blue-700 bg-blue-50">{t('totalDays')}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -2264,11 +2264,11 @@ const ManagerLeaves = () => {
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-300">
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">Month</th>
-                                <th className="px-4 py-3 text-center font-semibold text-cyan-700 bg-cyan-50">Earned</th>
-                                <th className="px-4 py-3 text-center font-semibold text-amber-700 bg-amber-50">Used</th>
-                                <th className="px-4 py-3 text-center font-semibold text-gray-700 bg-gray-50">Expired</th>
-                                <th className="px-4 py-3 text-center font-semibold text-emerald-700 bg-emerald-50">Available</th>
+                                <th className="px-4 py-3 text-left font-semibold text-gray-700">{t('month')}</th>
+                                <th className="px-4 py-3 text-center font-semibold text-cyan-700 bg-cyan-50">{t('earned')}</th>
+                                <th className="px-4 py-3 text-center font-semibold text-amber-700 bg-amber-50">{t('used')}</th>
+                                <th className="px-4 py-3 text-center font-semibold text-gray-700 bg-gray-50">{t('expired')}</th>
+                                <th className="px-4 py-3 text-center font-semibold text-emerald-700 bg-emerald-50">{t('available')}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -2313,29 +2313,39 @@ const ManagerLeaves = () => {
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-300">
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
-                                <th className="px-4 py-3 text-center font-semibold text-gray-700">Type</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">Month</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">Notes</th>
+                                <th className="px-4 py-3 text-left font-semibold text-gray-700">{t('date')}</th>
+                                <th className="px-4 py-3 text-center font-semibold text-gray-700">{t('type')}</th>
+                                <th className="px-4 py-3 text-left font-semibold text-gray-700">{t('month')}</th>
+                                <th className="px-4 py-3 text-left font-semibold text-gray-700">{t('notes')}</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {employeeStats.comp_off_details.map((detail, idx) => (
-                                <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 transition">
-                                  <td className="px-4 py-3 text-gray-900">{new Date(detail.date).toLocaleDateString()}</td>
-                                  <td className="px-4 py-3 text-center">
-                                    <span className={`px-3 py-1 rounded-full font-semibold text-sm ${
-                                      detail.type === 'earned' ? 'bg-cyan-100 text-cyan-700' :
-                                      detail.type === 'used' ? 'bg-amber-100 text-amber-700' :
-                                      'bg-gray-100 text-gray-700'
-                                    }`}>
-                                      {detail.type}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 text-gray-700">{detail.month || '-'}</td>
-                                  <td className="px-4 py-3 text-gray-600 text-xs">{detail.notes || '-'}</td>
-                                </tr>
-                              ))}
+                              {employeeStats.comp_off_details.map((detail, idx) => {
+                                // Translate notes dynamically
+                                let translatedNotes = detail.notes || '-';
+                                if (translatedNotes !== '-') {
+                                  translatedNotes = translatedNotes
+                                    .replace(/Earned by working on/g, t('earnedByWorkingOn'))
+                                    .replace(/Used on/g, t('usedOn'));
+                                }
+                                
+                                return (
+                                  <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                                    <td className="px-4 py-3 text-gray-900">{new Date(detail.date).toLocaleDateString()}</td>
+                                    <td className="px-4 py-3 text-center">
+                                      <span className={`px-3 py-1 rounded-full font-semibold text-sm ${
+                                        detail.type === 'earned' ? 'bg-cyan-100 text-cyan-700' :
+                                        detail.type === 'used' ? 'bg-amber-100 text-amber-700' :
+                                        'bg-gray-100 text-gray-700'
+                                      }`}>
+                                        {t(detail.type)}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-gray-700">{detail.month || '-'}</td>
+                                    <td className="px-4 py-3 text-gray-600 text-xs">{translatedNotes}</td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
@@ -2345,23 +2355,23 @@ const ManagerLeaves = () => {
                     {/* Year Summary - Enhanced */}
                     <div className="mb-6">
                       <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-green-500">
-                        📊 Annual Summary
+                        📊 {t('annualSummary')}
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                          <p className="text-xs text-gray-600 uppercase tracking-wide">Paid Days (Year)</p>
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">{t('paidDaysYear')}</p>
                           <p className="text-2xl font-bold text-purple-600 mt-2">{employeeStats.taken_paid_leave}</p>
                         </div>
                         <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                          <p className="text-xs text-gray-600 uppercase tracking-wide">Unpaid Days (Year)</p>
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">{t('unpaidDaysYear')}</p>
                           <p className="text-2xl font-bold text-red-600 mt-2">{employeeStats.taken_unpaid_leave}</p>
                         </div>
                         <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                          <p className="text-xs text-gray-600 uppercase tracking-wide">Total Days (Year)</p>
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">{t('totalDaysYear')}</p>
                           <p className="text-2xl font-bold text-blue-600 mt-2">{employeeStats.total_leaves_taken}</p>
                         </div>
                         <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                          <p className="text-xs text-gray-600 uppercase tracking-wide">Usage Rate</p>
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">{t('usageRate')}</p>
                           <p className="text-2xl font-bold text-green-600 mt-2">
                             {employeeStats.total_paid_leave > 0
                               ? Math.round((employeeStats.taken_paid_leave / employeeStats.total_paid_leave) * 100)
@@ -2373,20 +2383,20 @@ const ManagerLeaves = () => {
 
                     {/* Key Metrics */}
                     <div className="mb-6 p-4 bg-gray-50 rounded-lg border-l-4 border-indigo-500">
-                      <h4 className="font-semibold text-gray-900 mb-3">Key Metrics</h4>
+                      <h4 className="font-semibold text-gray-900 mb-3">{t('keyMetrics')}</h4>
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Monthly Average (Paid):</span>
+                          <span className="text-gray-600">{t('monthlyAveragePaid')}</span>
                           <span className="font-bold text-gray-900">
                             {employeeStats.monthly_breakdown && employeeStats.monthly_breakdown.length > 0
                               ? (employeeStats.taken_paid_leave / employeeStats.monthly_breakdown.length).toFixed(2)
-                              : 0} days
+                              : 0} {t('days')}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Days Per Month (Entitlement):</span>
+                          <span className="text-gray-600">{t('daysPerMonthEntitlement')}</span>
                           <span className="font-bold text-gray-900">
-                            {(employeeStats.total_paid_leave / 12).toFixed(2)} days
+                            {(employeeStats.total_paid_leave / 12).toFixed(2)} {t('days')}
                           </span>
                         </div>
                       </div>
@@ -2399,13 +2409,13 @@ const ManagerLeaves = () => {
                       onClick={() => downloadAsExcel(employeeStats)}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2"
                     >
-                      📥 Download as Excel
+                      📥 {t('downloadAsExcel')}
                     </Button>
                     <Button
                       onClick={() => setShowEmployeeStats(false)}
                       className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2"
                     >
-                      Close
+                      {t('close')}
                     </Button>
                   </div>
                 </div>

@@ -441,19 +441,10 @@ const CompOffManagement = ({ currentUser, departmentId }) => {
       )}
 
       {/* Add Comp-Off Form - For Managers */}
-      {currentUser?.user_type === 'manager' && (
+      {currentUser?.user_type === 'manager' && showCompOffForm && (
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-800">{t('requestToEarnCompOff')}</h3>
-            {!showCompOffForm && (
-              <button
-                onClick={() => setShowCompOffForm(true)}
-                className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
-              >
-                <Plus className="w-4 h-4" />
-                {t('newCompOffRequest')}
-              </button>
-            )}
           </div>
 
           {showCompOffForm && (

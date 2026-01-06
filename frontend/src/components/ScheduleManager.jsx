@@ -716,7 +716,7 @@ const ScheduleManager = ({ departmentId, employees = [], roles = [] }) => {
               </div>
               <div className="col-span-2">
                 <label className="text-sm text-gray-600">{t('status')}</label>
-                <p className="font-semibold capitalize">{selectedSchedule.status}</p>
+                <p className="font-semibold capitalize">{t(selectedSchedule.status)}</p>
               </div>
             </div>
             <div className="flex gap-2 justify-end">
