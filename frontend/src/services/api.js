@@ -143,8 +143,8 @@ export const rejectCompOff = (compOffId, reviewNotes) => {
   return api.post(`/manager/reject-comp-off/${compOffId}`, body);
 };
 export const getCompOffStatistics = () => api.get('/comp-off-statistics');
-export const exportCompOffReport = () => api.get('/comp-off/export/employee', { responseType: 'blob' });
-export const exportLeaveCompOffReport = (employeeId) => api.get(`/manager/export-leave-compoff/${employeeId}`, { responseType: 'blob' });
+export const exportCompOffReport = (language = 'en') => api.get(`/comp-off/export/employee?language=${language}`, { responseType: 'blob' });
+export const exportLeaveCompOffReport = (employeeId, language = 'en') => api.get(`/manager/export-leave-compoff/${employeeId}?language=${language}`, { responseType: 'blob' });
 
 // Unavailability
 export const createUnavailability = (unavailData) => api.post('/unavailability', unavailData);
@@ -219,20 +219,20 @@ export const getWeeklyAttendance = (employeeId, startDate) => {
 };
 
 // Attendance Export Functions
-export const exportMonthlyAttendance = (departmentId, year, month) => {
-  return api.get(`/attendance/export/monthly?department_id=${departmentId}&year=${year}&month=${month}`, {
+export const exportMonthlyAttendance = (departmentId, year, month, language = 'en') => {
+  return api.get(`/attendance/export/monthly?department_id=${departmentId}&year=${year}&month=${month}&language=${language}`, {
     responseType: 'blob'
   });
 };
 
-export const exportMonthlyComprehensiveAttendance = (departmentId, year, month) => {
-  return api.get(`/attendance/export/monthly-comprehensive?department_id=${departmentId}&year=${year}&month=${month}`, {
+export const exportMonthlyComprehensiveAttendance = (departmentId, year, month, language = 'en') => {
+  return api.get(`/attendance/export/monthly-comprehensive?department_id=${departmentId}&year=${year}&month=${month}&language=${language}`, {
     responseType: 'blob'
   });
 };
 
-export const exportWeeklyAttendance = (departmentId, startDate, endDate) => {
-  return api.get(`/attendance/export/weekly?department_id=${departmentId}&start_date=${startDate}&end_date=${endDate}`, {
+export const exportWeeklyAttendance = (departmentId, startDate, endDate, language = 'en') => {
+  return api.get(`/attendance/export/weekly?department_id=${departmentId}&start_date=${startDate}&end_date=${endDate}&language=${language}`, {
     responseType: 'blob'
   });
 };

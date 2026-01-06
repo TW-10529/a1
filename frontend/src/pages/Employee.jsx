@@ -969,7 +969,7 @@ const EmployeeAttendance = () => {
       const month = currentMonth.getMonth() + 1;
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/attendance/export/employee-monthly?year=${year}&month=${month}`, {
+      const response = await fetch(`http://localhost:8000/attendance/export/employee-monthly?year=${year}&month=${month}&language=${language}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`

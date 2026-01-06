@@ -12,7 +12,7 @@ import api, {
 } from '../services/api';
 
 const CompOffManagement = ({ currentUser, departmentId }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [compOffRequests, setCompOffRequests] = useState([]);
   const [compOffTracking, setCompOffTracking] = useState(null);
   const [monthlyBreakdown, setMonthlyBreakdown] = useState([]);
@@ -171,7 +171,7 @@ const CompOffManagement = ({ currentUser, departmentId }) => {
   const handleDownloadReport = async () => {
     setLoading(true);
     try {
-      const response = await exportCompOffReport();
+      const response = await exportCompOffReport(language);
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');

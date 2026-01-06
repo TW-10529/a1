@@ -37,6 +37,7 @@ from app.auth import (
 )
 from app.schedule_generator import ShiftScheduleGenerator
 from app.holidays_jp import jp_calendar, is_japanese_holiday, get_japanese_holiday_name
+from app.excel_translations import get_excel_translation, get_headers_translated
 
 app = FastAPI(
     title="Shift Scheduler V5.1 API",
@@ -1028,6 +1029,33 @@ async def list_managers(
         })
 
     return response
+
+
+@app.get("/managers/me")
+async def get_current_manager(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get the current manager's information"""
+    # Get manager record for current user
+    result = await db.execute(
+        select(Manager).filter(Manager.user_id == current_user.id)
+    )
+    manager = result.scalar_one_or_none()
+    
+    if not manager:
+        raise HTTPException(status_code=404, detail="Manager not found")
+    
+    return {
+        'id': manager.id,
+        'manager_id': manager.manager_id,
+        'user_id': manager.user_id,
+        'username': current_user.username,
+        'full_name': current_user.full_name,
+        'email': current_user.email,
+        'department_id': manager.department_id,
+        'is_active': manager.is_active,
+    }
 
 
 @app.put("/managers/{manager_id}", response_model=ManagerResponse)
@@ -2152,11 +2180,13 @@ async def export_monthly_attendance(
     year: int,
     month: int,
     employment_type: Optional[str] = None,
+    language: str = 'en',
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Export monthly attendance report as Excel
     employment_type: Optional filter - 'full_time', 'part_time', or None for all
+    language: Language for Excel ('en' or 'ja')
     """
     try:
         # Check authorization: only admins can download any department, managers only their own
@@ -2220,7 +2250,7 @@ async def export_monthly_attendance(
         summary_ws.title = "Summary"
         
         # Title
-        summary_ws['A1'] = f"{department.name} - Monthly Attendance Summary"
+        summary_ws['A1'] = f"{department.name} - {get_excel_translation('monthly_attendance_summary', language)}"
         summary_ws['A1'].font = title_font
         summary_ws.merge_cells('A1:B1')
         
@@ -2270,7 +2300,7 @@ async def export_monthly_attendance(
                 total_overtime_hours += record.overtime_hours
         
         # Summary data with styling
-        summary_ws['A4'] = "DEPARTMENT STATISTICS"
+        summary_ws['A4'] = get_excel_translation('department_statistics', language)
         summary_ws['A4'].font = section_font
         summary_ws['A4'].fill = summary_fill
         summary_ws['A4'].border = border
@@ -2278,15 +2308,15 @@ async def export_monthly_attendance(
         summary_ws['B4'].border = border
         
         summary_data = [
-            ['Total Days in Month', len(all_dates)],
-            ['Public Holidays', public_holidays],
-            ['Weekends (Sat/Sun)', weekends],
-            ['Total Non-Working Days', public_holidays + weekends],
-            ['Working Days Available', working_days_available],
-            ['Total Working Days Completed', working_days_actual],
+            [get_excel_translation('total_days_in_month', language), len(all_dates)],
+            [get_excel_translation('public_holidays', language), public_holidays],
+            [get_excel_translation('weekends', language), weekends],
+            [get_excel_translation('total_non_working_days', language), public_holidays + weekends],
+            [get_excel_translation('working_days_available', language), working_days_available],
+            [get_excel_translation('working_days_completed', language), working_days_actual],
             ['', ''],
-            ['Total Working Hours (All Employees)', f'{total_worked_hours:.2f}'],
-            ['Total Overtime Hours (All Employees)', f'{total_overtime_hours:.2f}'],
+            [get_excel_translation('total_working_hours_all', language), f'{total_worked_hours:.2f}'],
+            [get_excel_translation('total_overtime_hours_all', language), f'{total_overtime_hours:.2f}'],
         ]
         
         row = 5
@@ -2303,7 +2333,7 @@ async def export_monthly_attendance(
         
         # Holiday Details
         holiday_row = row + 1
-        summary_ws[f'A{holiday_row}'] = "PUBLIC HOLIDAYS IN THIS MONTH"
+        summary_ws[f'A{holiday_row}'] = get_excel_translation('public_holidays_in_month', language)
         summary_ws[f'A{holiday_row}'].font = section_font
         summary_ws[f'A{holiday_row}'].fill = summary_fill
         summary_ws[f'A{holiday_row}'].border = border
@@ -2325,21 +2355,36 @@ async def export_monthly_attendance(
         
         # Create Attendance Details Sheet
         ws = wb.create_sheet("Attendance Details")
-        ws.title = f"Attendance Details"
+        ws.title = f"{get_excel_translation('attendance_details', language)}"
 
         # Title and Info
-        ws['A1'] = f"{department.name} - Monthly Attendance Report"
+        ws['A1'] = f"{department.name} - {get_excel_translation('monthly_attendance_report', language)}"
         ws['A1'].font = title_font
         ws.merge_cells('A1:N1')
 
-        ws['A2'] = f"{calendar.month_name[month]} {year} | Total Employees: {len(employees)}"
+        ws['A2'] = f"{calendar.month_name[month]} {year} | {get_excel_translation('total_employees', language)}: {len(employees)}"
         ws['A2'].font = Font(size=11)
         ws.merge_cells('A2:N2')
 
         ws['A3'] = ""
 
         # Headers - Same as weekly format for consistency
-        headers = ['Employee ID', 'Name', 'Date', 'Leave Status', 'Assigned Shift', 'Total Hrs Assigned', 'Check-In', 'Check-Out', 'Total Hrs Worked', 'Break Time', 'Overtime Hours', 'Status', 'Comp-Off Earned', 'Comp-Off Used']
+        headers = [
+            get_excel_translation('employee_id', language),
+            get_excel_translation('name', language),
+            get_excel_translation('date', language),
+            get_excel_translation('leave_status', language),
+            get_excel_translation('assigned_shift', language),
+            get_excel_translation('total_hrs_assigned', language),
+            get_excel_translation('check_in', language),
+            get_excel_translation('check_out', language),
+            get_excel_translation('total_hrs_worked', language),
+            get_excel_translation('break_time', language),
+            get_excel_translation('overtime_hours', language),
+            get_excel_translation('status', language),
+            get_excel_translation('comp_off_earned', language),
+            get_excel_translation('comp_off_used', language)
+        ]
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=4, column=col)
             cell.value = header
@@ -2834,11 +2879,13 @@ async def export_weekly_attendance(
     start_date: date,
     end_date: date,
     employment_type: Optional[str] = None,
+    language: str = 'en',
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Export weekly attendance report as Excel
     employment_type: Optional filter - 'full_time', 'part_time', or None for all
+    language: Language for Excel ('en' or 'ja')
     """
     try:
         # Check authorization: only admins can download any department, managers only their own
@@ -2899,7 +2946,7 @@ async def export_weekly_attendance(
         summary_ws.title = "Summary"
         
         # Summary Title
-        summary_ws['A1'] = f"{department.name} - Weekly Attendance Summary"
+        summary_ws['A1'] = f"{department.name} - {get_excel_translation('weekly_attendance_summary', language)}"
         summary_ws['A1'].font = title_font
         summary_ws.merge_cells('A1:B1')
         
@@ -2954,7 +3001,7 @@ async def export_weekly_attendance(
                 total_overtime_hours += record.overtime_hours
         
         # Summary data with styling
-        summary_ws['A4'] = "WEEKLY STATISTICS"
+        summary_ws['A4'] = get_excel_translation('weekly_statistics', language)
         summary_ws['A4'].font = section_font
         summary_ws['A4'].fill = summary_fill
         summary_ws['A4'].border = border
@@ -2962,10 +3009,10 @@ async def export_weekly_attendance(
         summary_ws['B4'].border = border
         
         summary_data = [
-            ['Total Employees in Department', len(employees)],
-            ['Employees Present (with attendance)', present_count],
-            ['Total Working Hours (All Employees)', f'{total_worked_hours:.2f}'],
-            ['Total Overtime Hours (All Employees)', f'{total_overtime_hours:.2f}'],
+            [get_excel_translation('total_employees', language), len(employees)],
+            [get_excel_translation('employees_present', language), present_count],
+            [get_excel_translation('total_working_hours_all', language), f'{total_worked_hours:.2f}'],
+            [get_excel_translation('total_overtime_hours_all', language), f'{total_overtime_hours:.2f}'],
         ]
         
         row = 5
@@ -2984,22 +3031,36 @@ async def export_weekly_attendance(
         summary_ws.column_dimensions['B'].width = 20
         
         # Create Attendance Details Sheet
-        ws = wb.create_sheet("Attendance Details")
-        ws.title = "Attendance Details"
+        ws = wb.create_sheet(get_excel_translation('attendance_details', language))
+        ws.title = get_excel_translation('attendance_details', language)
         
         # Title and Info
-        ws['A1'] = f"{department.name} - Weekly Attendance Report"
+        ws['A1'] = f"{department.name} - {get_excel_translation('weekly_attendance_report', language)}"
         ws['A1'].font = title_font
         ws.merge_cells('A1:M1')
 
-        ws['A2'] = f"{start_date.isoformat()} to {end_date.isoformat()} | Total Employees: {len(employees)}"
+        ws['A2'] = f"{start_date.isoformat()} to {end_date.isoformat()} | {get_excel_translation('total_employees', language)}: {len(employees)}"
         ws['A2'].font = Font(size=11)
         ws.merge_cells('A2:M2')
 
         ws['A3'] = ""
         
         # Headers - Added Comp-Off columns
-        headers = ['Employee ID', 'Name', 'Date', 'Assigned Shift', 'Total Hrs Assigned', 'Check-In', 'Check-Out', 'Total Hrs Worked', 'Break Time', 'Overtime Hours', 'Status', 'Comp-Off Earned', 'Comp-Off Used']
+        headers = [
+            get_excel_translation('employee_id', language),
+            get_excel_translation('name', language),
+            get_excel_translation('date', language),
+            get_excel_translation('assigned_shift', language),
+            get_excel_translation('total_hrs_assigned', language),
+            get_excel_translation('check_in', language),
+            get_excel_translation('check_out', language),
+            get_excel_translation('total_hrs_worked', language),
+            get_excel_translation('break_time', language),
+            get_excel_translation('overtime_hours', language),
+            get_excel_translation('status', language),
+            get_excel_translation('comp_off_earned', language),
+            get_excel_translation('comp_off_used', language)
+        ]
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=4, column=col)
             cell.value = header
@@ -3147,6 +3208,7 @@ async def export_employee_monthly_attendance(
     year: int,
     month: int,
     employee_id: Optional[str] = None,
+    language: str = 'en',
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -3154,6 +3216,7 @@ async def export_employee_monthly_attendance(
     
     - If employee_id is provided, only MANAGER and ADMIN can download
     - If employee_id is not provided, current user gets their own report
+    language: Language for Excel ('en' or 'ja')
     """
     try:
         # Determine which employee to get
@@ -3273,15 +3336,16 @@ async def export_employee_monthly_attendance(
         summary_sheet = wb.create_sheet("Summary")
         
         # Title
-        summary_sheet['A1'] = f"{employee.first_name} {employee.last_name} - Monthly Report"
+        month_name = calendar.month_name[month]
+        summary_sheet['A1'] = f"{employee.first_name} {employee.last_name} - {get_excel_translation('monthly_report', language)}"
         summary_sheet['A1'].font = title_font
         summary_sheet.merge_cells('A1:B1')
         
-        summary_sheet['A2'] = f"{calendar.month_name[month]} {year}"
+        summary_sheet['A2'] = f"{month_name} {year}"
         summary_sheet['A2'].font = Font(size=11)
         summary_sheet.merge_cells('A2:B2')
         
-        summary_sheet['A3'] = f"Employee ID: {employee.employee_id}"
+        summary_sheet['A3'] = f"{get_excel_translation('employee_id', language)}: {employee.employee_id}"
         summary_sheet['A3'].font = Font(size=10)
         
         summary_sheet['A4'] = ""
@@ -3346,7 +3410,7 @@ async def export_employee_monthly_attendance(
         row = 5
         
         # ATTENDANCE SUMMARY
-        summary_sheet[f'A{row}'] = "ATTENDANCE SUMMARY"
+        summary_sheet[f'A{row}'] = get_excel_translation('attendance_summary', language)
         summary_sheet[f'A{row}'].font = section_font
         summary_sheet[f'A{row}'].fill = summary_fill
         summary_sheet[f'A{row}'].border = border
@@ -3356,12 +3420,12 @@ async def export_employee_monthly_attendance(
         
         row += 1
         attendance_items = [
-            ('Total Days in Month', total_days_in_month),
-            ('Public Holidays', public_holidays),
-            ('Weekends', weekends),
-            ('Total Non-Working Days', public_holidays + weekends),
-            ('Working Days Available', working_days_available),
-            ('Working Days Worked', working_days_worked),
+            (get_excel_translation('total_days_in_month', language), total_days_in_month),
+            (get_excel_translation('public_holidays', language), public_holidays),
+            (get_excel_translation('weekends', language), weekends),
+            (get_excel_translation('total_non_working_days', language), public_holidays + weekends),
+            (get_excel_translation('working_days_available', language), working_days_available),
+            (get_excel_translation('working_days_worked', language), working_days_worked),
         ]
         
         for label, value in attendance_items:
@@ -3376,7 +3440,7 @@ async def export_employee_monthly_attendance(
         
         # LEAVE SUMMARY
         row += 1
-        summary_sheet[f'A{row}'] = "LEAVE SUMMARY"
+        summary_sheet[f'A{row}'] = get_excel_translation('leave_summary', language)
         summary_sheet[f'A{row}'].font = section_font
         summary_sheet[f'A{row}'].fill = summary_fill
         summary_sheet[f'A{row}'].border = border
@@ -3386,11 +3450,11 @@ async def export_employee_monthly_attendance(
         
         row += 1
         leave_items = [
-            ('Annual Paid Leave Entitlement', f'{employee.paid_leave_per_year}'),
-            ('Paid Leave Days Used', f'{paid_leave_days:.1f}'),
-            ('Paid Leave Days Remaining', f'{max(0, employee.paid_leave_per_year - paid_leave_days):.1f}'),
-            ('Unpaid Leave Days', f'{unpaid_leave_days:.1f}'),
-            ('Total Leave Days', f'{paid_leave_days + unpaid_leave_days:.1f}'),
+            (get_excel_translation('annual_paid_leave_entitlement', language), f'{employee.paid_leave_per_year}'),
+            (get_excel_translation('paid_leave_days_used', language), f'{paid_leave_days:.1f}'),
+            (get_excel_translation('paid_leave_days_remaining', language), f'{max(0, employee.paid_leave_per_year - paid_leave_days):.1f}'),
+            (get_excel_translation('unpaid_leave_days', language), f'{unpaid_leave_days:.1f}'),
+            (get_excel_translation('total_leave_days', language), f'{paid_leave_days + unpaid_leave_days:.1f}'),
         ]
         
         for label, value in leave_items:
@@ -3407,7 +3471,7 @@ async def export_employee_monthly_attendance(
         row += 1
         comp_off_earned = len(comp_off_earned_dates)
         comp_off_used = len(comp_off_used_dates)
-        summary_sheet[f'A{row}'] = "COMP-OFF SUMMARY"
+        summary_sheet[f'A{row}'] = get_excel_translation('comp_off_summary', language)
         summary_sheet[f'A{row}'].font = section_font
         summary_sheet[f'A{row}'].fill = summary_fill
         summary_sheet[f'A{row}'].border = border
@@ -3417,9 +3481,9 @@ async def export_employee_monthly_attendance(
         
         row += 1
         compoff_items = [
-            ('Comp-Off Earned Days', f'{comp_off_earned}'),
-            ('Comp-Off Used Days', f'{comp_off_used}'),
-            ('Comp-Off Balance', f'{comp_off_earned - comp_off_used}'),
+            (get_excel_translation('comp_off_earned_days', language), f'{comp_off_earned}'),
+            (get_excel_translation('comp_off_used_days', language), f'{comp_off_used}'),
+            (get_excel_translation('comp_off_balance', language), f'{comp_off_earned - comp_off_used}'),
         ]
         
         for label, value in compoff_items:
@@ -3434,7 +3498,7 @@ async def export_employee_monthly_attendance(
         
         # HOURS SUMMARY
         row += 1
-        summary_sheet[f'A{row}'] = "HOURS SUMMARY"
+        summary_sheet[f'A{row}'] = get_excel_translation('hours_summary', language)
         summary_sheet[f'A{row}'].font = section_font
         summary_sheet[f'A{row}'].fill = summary_fill
         summary_sheet[f'A{row}'].border = border
@@ -3444,9 +3508,9 @@ async def export_employee_monthly_attendance(
         
         row += 1
         hours_items = [
-            ('Total Hours Worked', f'{total_worked_hours:.2f}'),
-            ('Total Overtime Hours', f'{total_ot_hours:.2f}'),
-            ('Total Night Hours (After 22:00)', f'{total_night_hours:.2f}'),
+            (get_excel_translation('total_hours_worked', language), f'{total_worked_hours:.2f}'),
+            (get_excel_translation('total_overtime_hours', language), f'{total_ot_hours:.2f}'),
+            (get_excel_translation('total_night_hours', language), f'{total_night_hours:.2f}'),
         ]
         
         for label, value in hours_items:
@@ -3464,21 +3528,35 @@ async def export_employee_monthly_attendance(
         
         # === SHEET 2: DAILY ATTENDANCE ===
         ws = wb.create_sheet("Daily Attendance")
-        ws.title = "Daily Attendance"
+        ws.title = get_excel_translation('daily_attendance', language)
         
         # Title
-        ws['A1'] = f"{employee.first_name} {employee.last_name} - Daily Attendance"
+        ws['A1'] = f"{employee.first_name} {employee.last_name} - {get_excel_translation('daily_attendance', language)}"
         ws['A1'].font = title_font
         ws.merge_cells('A1:M1')
         
-        ws['A2'] = f"{calendar.month_name[month]} {year}"
+        ws['A2'] = f"{month_name} {year}"
         ws['A2'].font = Font(size=11)
         ws.merge_cells('A2:M2')
         
         ws['A3'] = ""
         
         # Headers
-        headers = ['Date', 'Day', 'Assigned Shift', 'Check-In', 'Check-Out', 'Hours Worked', 'Night Hours (After 22:00)', 'Break (min)', 'Overtime Hours', 'Status', 'Comp-Off Earned', 'Comp-Off Used', 'Notes']
+        headers = [
+            get_excel_translation('date', language),
+            get_excel_translation('day', language),
+            get_excel_translation('assigned_shift', language),
+            get_excel_translation('check_in', language),
+            get_excel_translation('check_out', language),
+            get_excel_translation('hours_worked', language),
+            get_excel_translation('night_hours', language),
+            get_excel_translation('break_minutes', language),
+            get_excel_translation('overtime_hours', language),
+            get_excel_translation('status', language),
+            get_excel_translation('comp_off_earned', language),
+            get_excel_translation('comp_off_used', language),
+            get_excel_translation('notes', language)
+        ]
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=4, column=col)
             cell.value = header
@@ -3972,10 +4050,13 @@ async def get_employee_leave_statistics(
 @app.get("/manager/export-leave-compoff/{employee_id}")
 async def export_leave_compoff_report(
     employee_id: str,
+    language: str = 'en',
     current_user: User = Depends(require_manager),
     db: AsyncSession = Depends(get_db)
 ):
-    """Manager exports leave and comp-off report for an employee as Excel"""
+    """Manager exports leave and comp-off report for an employee as Excel
+    language: Language for Excel ('en' or 'ja')
+    """
     from datetime import date, datetime
     
     # Get the manager record for current user
@@ -5451,10 +5532,13 @@ async def get_comp_off_statistics(
 
 @app.get("/comp-off/export/employee")
 async def export_comp_off_report(
+    language: str = 'en',
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Export comp-off records as Excel for current employee"""
+    """Export comp-off records as Excel for current employee
+    language: Language for Excel ('en' or 'ja')
+    """
     if current_user.user_type != UserType.EMPLOYEE:
         raise HTTPException(status_code=403, detail="Only employees can download their comp-off reports")
     

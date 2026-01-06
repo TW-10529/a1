@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, Trash2, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 import api, { exportLeaveCompOffReport } from '../services/api';
 
 const LeaveManagement = ({ currentUser, departmentId }) => {
+  const { t, language } = useLanguage();
   const [leaves, setLeaves] = useState([]);
   const [unavailability, setUnavailability] = useState([]);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
@@ -188,7 +190,7 @@ const LeaveManagement = ({ currentUser, departmentId }) => {
 
     try {
       // Download Excel file with both leave and comp-off data
-      const response = await exportLeaveCompOffReport(managerLeaveStats.employee_id);
+      const response = await exportLeaveCompOffReport(managerLeaveStats.employee_id, language);
 
       // Create blob and download
       const blob = new Blob([response.data], {

@@ -2595,7 +2595,7 @@ const ManagerLeaves = () => {
 };
 
 const ManagerAttendance = ({ user }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState([]);
@@ -2611,9 +2611,11 @@ const ManagerAttendance = ({ user }) => {
   const [showMonthlyModal, setShowMonthlyModal] = useState(false);
   const [showWeeklyModal, setShowWeeklyModal] = useState(false);
   const [selectedEmploymentType, setSelectedEmploymentType] = useState('');
+  const [managerDepartmentId, setManagerDepartmentId] = useState(null);
 
   useEffect(() => {
     loadAttendance();
+    loadManagerDepartment();
     // load roles so we can resolve role names when schedule.role object is not included
     (async () => {
       try {
@@ -2624,6 +2626,18 @@ const ManagerAttendance = ({ user }) => {
       }
     })();
   }, []);
+
+  const loadManagerDepartment = async () => {
+    try {
+      // Get the current manager's department
+      const response = await api.get('/managers/me');
+      if (response.data && response.data.department_id) {
+        setManagerDepartmentId(response.data.department_id);
+      }
+    } catch (err) {
+      console.error('Failed to load manager department:', err);
+    }
+  };
 
   const loadAttendance = async () => {
     try {
@@ -2652,10 +2666,15 @@ const ManagerAttendance = ({ user }) => {
 
   const downloadMonthlyReport = async (employmentType = '') => {
     try {
+      if (!managerDepartmentId) {
+        alert('Loading manager information... Please wait and try again.');
+        return;
+      }
       const params = new URLSearchParams({
-        department_id: user.manager_department_id,
+        department_id: managerDepartmentId,
         year: selectedYear,
-        month: selectedMonth
+        month: selectedMonth,
+        language: language
       });
       if (employmentType) {
         params.append('employment_type', employmentType);
@@ -2674,11 +2693,17 @@ const ManagerAttendance = ({ user }) => {
       link.remove();
     } catch (err) {
       console.error('Failed to download monthly report', err);
+      const errorMsg = err.response?.data?.detail || err.message || 'Unknown error';
+      alert(`Download failed: ${errorMsg}`);
     }
   };
 
   const downloadWeeklyReport = async (employmentType = '') => {
     try {
+      if (!managerDepartmentId) {
+        alert('Loading manager information... Please wait and try again.');
+        return;
+      }
       const today = new Date();
       const dayOfWeek = today.getDay();
       const startDate = new Date(today);
@@ -2687,9 +2712,10 @@ const ManagerAttendance = ({ user }) => {
       endDate.setDate(startDate.getDate() + 6);
       
       const params = new URLSearchParams({
-        department_id: user.manager_department_id,
+        department_id: managerDepartmentId,
         start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0]
+        end_date: endDate.toISOString().split('T')[0],
+        language: language
       });
       if (employmentType) {
         params.append('employment_type', employmentType);
@@ -2708,6 +2734,8 @@ const ManagerAttendance = ({ user }) => {
       link.remove();
     } catch (err) {
       console.error('Failed to download weekly report', err);
+      const errorMsg = err.response?.data?.detail || err.message || 'Unknown error';
+      alert(`Download failed: ${errorMsg}`);
     }
   };
 
@@ -2721,7 +2749,7 @@ const ManagerAttendance = ({ user }) => {
       setEmpDownloading(true);
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:8000/attendance/export/employee-monthly?year=${empDownloadYear}&month=${empDownloadMonth}&employee_id=${employeeIdInput}`,
+        `http://localhost:8000/attendance/export/employee-monthly?year=${empDownloadYear}&month=${empDownloadMonth}&employee_id=${employeeIdInput}&language=${language}`,
         {
           method: 'GET',
           headers: {

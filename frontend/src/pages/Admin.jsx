@@ -953,7 +953,7 @@ const AdminManagers = () => {
 // =============== ADMIN DEPARTMENTS COMPONENT ===============
 
 const AdminDepartments = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const monthKeys = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
   const [departments, setDepartments] = useState([]);
   const [selectedDept, setSelectedDept] = useState(null);
@@ -1070,7 +1070,7 @@ const AdminDepartments = () => {
       return;
     }
     try {
-      const response = await api.get(`/attendance/export/monthly?department_id=${selectedDept}&year=${selectedYear}&month=${selectedMonth}`, {
+      const response = await api.get(`/attendance/export/monthly?department_id=${selectedDept}&year=${selectedYear}&month=${selectedMonth}&language=${language}`, {
         responseType: 'blob'
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -1099,7 +1099,7 @@ const AdminDepartments = () => {
       const endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 6);
       
-      const response = await api.get(`/attendance/export/weekly?department_id=${selectedDept}&start_date=${startDate.toISOString().split('T')[0]}&end_date=${endDate.toISOString().split('T')[0]}`, {
+      const response = await api.get(`/attendance/export/weekly?department_id=${selectedDept}&start_date=${startDate.toISOString().split('T')[0]}&end_date=${endDate.toISOString().split('T')[0]}&language=${language}`, {
         responseType: 'blob'
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -1125,7 +1125,7 @@ const AdminDepartments = () => {
       setEmpDownloading(true);
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:8000/attendance/export/employee-monthly?year=${empDownloadYear}&month=${empDownloadMonth}&employee_id=${employeeIdInput}`,
+        `http://localhost:8000/attendance/export/employee-monthly?year=${empDownloadYear}&month=${empDownloadMonth}&employee_id=${employeeIdInput}&language=${language}`,
         {
           method: 'GET',
           headers: {
