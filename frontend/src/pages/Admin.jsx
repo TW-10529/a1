@@ -1644,14 +1644,14 @@ const AdminDepartments = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('employeeId')}</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('employee')}</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('role')}</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned Shift</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Hrs Assigned</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-In</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-Out</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Hrs Worked</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Break Time</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Overtime Hours</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('assignedShift')}</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('totalHrsAssigned')}</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('checkInHeader')}</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('checkOutHeader')}</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('totalHrsWorkedHeader')}</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('breakTimeHeader')}</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('overtimeHoursHeader')}</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('status')}</th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">

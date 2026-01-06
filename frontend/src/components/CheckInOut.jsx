@@ -279,7 +279,7 @@ export default function CheckInOut() {
                   </p>
                   {todayStatus.status && (
                     <p className="text-xs text-blue-600 mt-1">
-                      {t('status')}: <span className="font-semibold">{todayStatus.status}</span>
+                      {t('status')}: <span className="font-semibold">{t(todayStatus.status)}</span>
                     </p>
                   )}
                 </div>

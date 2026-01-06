@@ -73,13 +73,13 @@ const CompOffManagement = ({ currentUser, departmentId }) => {
 
   const handleAddCompOff = async () => {
     if (!compOffForm.comp_off_date) {
-      setError('Please select a date for comp-off');
+      setError(t('pleaseSelectDateForCompOff'));
       return;
     }
 
     // Validate employee_id for managers
     if (currentUser?.user_type === 'manager' && !compOffForm.employee_id) {
-      setError('Please select an employee');
+      setError(t('pleaseSelectAnEmployee'));
       return;
     }
 
@@ -363,7 +363,7 @@ const CompOffManagement = ({ currentUser, departmentId }) => {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3 items-start">
           <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-red-800">Error</p>
+            <p className="font-semibold text-red-800">{t('error')}</p>
             <p className="text-red-700 text-sm">{error}</p>
           </div>
         </div>
@@ -462,7 +462,7 @@ const CompOffManagement = ({ currentUser, departmentId }) => {
                   onChange={(e) => setCompOffForm({ ...compOffForm, employee_id: e.target.value })}
                   className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="">Select an employee</option>
+                  <option value="">{t('selectEmployee')}</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
                       {emp.first_name} {emp.last_name} ({emp.employee_id})
@@ -553,14 +553,14 @@ const CompOffManagement = ({ currentUser, departmentId }) => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Date</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">{t('date')}</th>
                   {currentUser?.user_type !== 'employee' && (
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Employee</th>
+                    <th className="px-6 py-3 text-left font-semibold text-gray-700">{t('employee')}</th>
                   )}
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Reason</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Status</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">{t('reason')}</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">{t('status')}</th>
                   {currentUser?.user_type === 'manager' && (
-                    <th className="px-6 py-3 text-center font-semibold text-gray-700">Actions</th>
+                    <th className="px-6 py-3 text-center font-semibold text-gray-700">{t('actions')}</th>
                   )}
                 </tr>
               </thead>

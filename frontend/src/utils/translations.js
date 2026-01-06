@@ -58,6 +58,8 @@ const translations = {
 
     // Header
     notifications: 'Notifications',
+    markAllRead: 'Mark all read',
+    noNotificationsYet: 'No notifications yet',
     profile: 'Profile',
     settings: 'Settings',
     logout: 'Logout',
@@ -111,6 +113,9 @@ const translations = {
     rejected: 'Rejected',
     pending: 'Pending',
     unknown: 'Unknown',
+    paid: 'Paid',
+    unpaid: 'Unpaid',
+    compOff: 'Comp-Off',
 
     // Admin Dashboard
     totalUsers: 'Total Users',
@@ -224,6 +229,16 @@ const translations = {
     halfDay: 'Half Day',
     attendanceReport: 'Attendance Report',
     markAttendance: 'Mark Attendance',
+
+    // Table headers for department attendance view
+    assignedShift: 'Assigned Shift',
+    assignedShiftTime: 'Assigned Shift Time',
+    totalHrsAssigned: 'Total Hrs Assigned',
+    checkInHeader: 'Check-In',
+    checkOutHeader: 'Check-Out',
+    totalHrsWorkedHeader: 'Total Hrs Worked',
+    breakTimeHeader: 'Break Time',
+    overtimeHoursHeader: 'Overtime Hours',
 
     // Leave
     leaveType: 'Leave Type',
@@ -360,12 +375,15 @@ const translations = {
     pleaseEnterEmployeeID: 'Please enter an Employee ID',
     failedDownloadReport: 'Failed to download employee report',
     selectEmployeeOrSendAll: 'Please select an employee or check "Send to all department employees"',
+    pleaseSelectAnEmployee: 'Please select an employee',
+    pleaseSelectDateForCompOff: 'Please select a date for comp-off',
     failedSendMessage: 'Failed to send message',
     confirmDeleteMessage: 'Are you sure you want to delete this message?',
     failedDeleteMessage: 'Failed to delete message',
     sendToAllDeptEmployees: 'Send to all department employees',
     recipient: 'Recipient',
     selectEmployee: 'Select employee',
+    message: 'Message',
     messageSubject: 'Message subject',
     typeMessageHere: 'Type your message here...',
 
@@ -1085,6 +1103,8 @@ const translations = {
 
     // Header
     notifications: '通知',
+    markAllRead: 'すべて既読にする',
+    noNotificationsYet: 'まだ通知はありません',
     profile: 'プロフィール',
     settings: '設定',
     logout: 'ログアウト',
@@ -1138,6 +1158,9 @@ const translations = {
     rejected: '却下',
     pending: '保留中',
     unknown: '不明',
+    paid: '有給',
+    unpaid: '無給',
+    compOff: '代休',
 
     // Admin Dashboard
     totalUsers: 'ユーザー総数',
@@ -1386,12 +1409,15 @@ const translations = {
     pleaseEnterEmployeeID: '従業員IDを入力してください',
     failedDownloadReport: '従業員レポートのダウンロードに失敗しました',
     selectEmployeeOrSendAll: '従業員を選択するか、「すべての部門従業員に送信」をチェックしてください',
+    pleaseSelectAnEmployee: '従業員を選択してください',
+    pleaseSelectDateForCompOff: '代休日を選択してください',
     failedSendMessage: 'メッセージの送信に失敗しました',
     confirmDeleteMessage: 'このメッセージを削除してもよろしいですか？',
     failedDeleteMessage: 'メッセージの削除に失敗しました',
     sendToAllDeptEmployees: 'すべての部門従業員に送信',
     recipient: '受信者',
     selectEmployee: '従業員を選択',
+    message: 'メッセージ',
     messageSubject: 'メッセージの主件',
     typeMessageHere: 'ここにメッセージを入力してください...',
 
@@ -2043,6 +2069,15 @@ const translations = {
     attendanceOTHours: 'OT時間',
     attendanceStatus: 'ステータス',
     attendanceTipsText: '勤務時間に関するヒント',
+    // Table headers for department attendance view
+    assignedShift: '割り当てシフト',
+    assignedShiftTime: '割り当てシフト時間',
+    totalHrsAssigned: '割り当て時間合計',
+    checkInHeader: '出勤',
+    checkOutHeader: '退勤',
+    totalHrsWorkedHeader: '合計勤務時間',
+    breakTimeHeader: '休憩時間',
+    overtimeHoursHeader: '残業時間',
     alwaysCheckInOnTime: 'オンタイムでチェックインして、良好な出勤記録を維持してください',
     lateArrivalsMayImpact: '遅刻はパフォーマンスレビューに影響する可能性があります',
     notifyManagerIfLateAbsent: '遅刻または欠勤する場合は、事前にマネージャーに通知してください',

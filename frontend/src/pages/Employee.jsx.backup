@@ -878,7 +878,7 @@ const EmployeeLeaves = ({ user }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">📅 {t('endDateLabel')}</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">📅 End Date</label>
                 <input
                   type="date"
                   value={formData.end_date}
@@ -888,20 +888,20 @@ const EmployeeLeaves = ({ user }) => {
                   disabled={formData.duration_type.startsWith('half_day')}
                 />
                 {formData.duration_type.startsWith('half_day') && (
-                  <p className="text-xs text-blue-600 mt-1">{t('autoSetToStartDate')}</p>
+                  <p className="text-xs text-blue-600 mt-1">Auto-set to start date for half-day leaves</p>
                 )}
               </div>
             </div>
 
             {/* Reason Field */}
             <div className="pb-4">
-              <label className="block text-sm font-semibold text-gray-800 mb-2">📝 {t('reasonLabel')}</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">📝 Reason</label>
               <textarea
                 value={formData.reason}
                 onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 rows="3"
-                placeholder={t('provideReasonForRequest')}
+                placeholder="Provide a reason for your request (optional)..."
               />
             </div>
 
@@ -1607,7 +1607,7 @@ const EmployeeRequests = ({ user }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">📅 {t('endDateLabel')}</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">📅 End Date</label>
                 <input
                   type="date"
                   value={formData.end_date}
@@ -1617,20 +1617,20 @@ const EmployeeRequests = ({ user }) => {
                   disabled={formData.duration_type.startsWith('half_day')}
                 />
                 {formData.duration_type.startsWith('half_day') && (
-                  <p className="text-xs text-blue-600 mt-1">{t('autoSetToStartDate')}</p>
+                  <p className="text-xs text-blue-600 mt-1">Auto-set to start date for half-day leaves</p>
                 )}
               </div>
             </div>
 
             {/* Reason Field */}
             <div className="pb-4">
-              <label className="block text-sm font-semibold text-gray-800 mb-2">📝 {t('reasonLabel')}</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">📝 Reason</label>
               <textarea
                 value={formData.reason}
                 onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 rows="3"
-                placeholder={t('provideReasonForRequest')}
+                placeholder="Provide a reason for your request (optional)..."
               />
             </div>
 

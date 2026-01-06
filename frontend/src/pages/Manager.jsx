@@ -987,7 +987,7 @@ const ManagerRoles = ({ user }) => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-blue-600 bg-blue-100 px-3 py-1 rounded">
-                        {role.shifts?.length || 0} Shifts
+                        {role.shifts?.length || 0} {t('shiftsLabel')}
                       </span>
                       <button
                         onClick={(e) => {
@@ -1578,7 +1578,7 @@ const ManagerLeaves = () => {
 
   const handleSearchEmployee = async () => {
     if (!searchEmpId.trim()) {
-      alert('Please enter an employee ID');
+      alert(t('pleaseEnterEmployeeID'));
       return;
     }
     try {
@@ -2561,19 +2561,19 @@ const ManagerLeaves = () => {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Reason</p>
+                <p className="text-sm text-gray-500">{t('reason')}</p>
                 <p className="font-medium">{selectedLeave.reason}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Review Notes (Optional)
+                  {t('reviewNotes')} ({t('optional')})
                 </label>
                 <textarea
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   rows="3"
-                  placeholder="Add any notes about this decision..."
+                  placeholder={t('addNotesAboutDecision')}
                 />
               </div>
             </div>
@@ -2912,16 +2912,16 @@ const ManagerAttendance = ({ user }) => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned Shift Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Hrs Assigned</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-In</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-Out</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Hrs Worked</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Break Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Overtime Hours</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('employee')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('role')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('assignedShiftTime')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('totalHrsAssigned')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('checkInHeader')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('checkOutHeader')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('totalHrsWorkedHeader')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('breakTimeHeader')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('overtimeHoursHeader')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('status')}</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -2973,7 +2973,10 @@ const ManagerAttendance = ({ user }) => {
                             record.status === 'late' ? 'bg-orange-100 text-orange-800' :
                             'bg-blue-100 text-blue-800'
                           }`}>
-                            {record.status || 'Scheduled'}
+                            {record.status === 'onTime' ? t('onTime') :
+                             record.status === 'slightlyLate' ? t('slightlyLate') :
+                             record.status === 'late' ? t('late') :
+                             record.status ? record.status : t('scheduled')}
                           </span>
                         </td>
                       </tr>

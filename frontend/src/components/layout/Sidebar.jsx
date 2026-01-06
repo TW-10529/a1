@@ -13,7 +13,6 @@ import {
   LogOut,
   Gift
 } from 'lucide-react';
-import NotificationBell from './NotificationBell';
 import { useLanguage } from '../../context/LanguageContext';
 
 const Sidebar = ({ user, onLogout }) => {
@@ -58,10 +57,7 @@ const Sidebar = ({ user, onLogout }) => {
     <div className="flex flex-col h-full bg-gray-900 text-white w-64">
       {/* Logo */}
       <div className="p-6 border-b border-gray-700">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold">{t('shiftScheduler')}</h1>
-          <NotificationBell />
-        </div>
+        <h1 className="text-2xl font-bold mb-2">{t('shiftScheduler')}</h1>
         <p className="text-sm text-gray-400 mt-1">
           {user.user_type === 'admin' 
             ? t('adminPortal') 
