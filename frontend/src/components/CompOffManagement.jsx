@@ -265,16 +265,16 @@ const CompOffManagement = ({ currentUser, departmentId }) => {
       {/* How to Use Comp-Off */}
       {currentUser?.user_type === 'employee' && compOffTracking && compOffTracking.available_days > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-900 font-semibold mb-2">💡 How to Use Your Available Comp-Off Days</p>
+          <p className="text-sm text-blue-900 font-semibold mb-2">💡 {t('howToUseCompOffDays')}</p>
           <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-            <li>Go to <strong>Leave Requests</strong> tab</li>
-            <li>Click <strong>"New Leave Request"</strong> button</li>
-            <li>Select <strong>Leave Type: "Comp-Off (Use Earned)"</strong></li>
-            <li>Choose the date when you want to take off (must be a shift day)</li>
-            <li>Submit and wait for manager approval</li>
-            <li>Approved comp-off usage will deduct from your available balance</li>
+            <li>{t('compOffStep1')}</li>
+            <li>{t('compOffStep2')}</li>
+            <li>{t('compOffStep3')}</li>
+            <li>{t('compOffStep4')}</li>
+            <li>{t('compOffStep5')}</li>
+            <li>{t('compOffStep6')}</li>
           </ol>
-          <p className="text-xs text-blue-700 mt-3 font-semibold">⚠️ Important: Comp-off must be used within the month it was earned. Unused comp-off expires at the end of the month.</p>
+          <p className="text-xs text-blue-700 mt-3 font-semibold">⚠️ {t('compOffImportantWarning')}</p>
         </div>
       )}
 
