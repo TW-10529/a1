@@ -450,6 +450,12 @@ const translations = {
     requiredSkills: 'Required Skills (comma-separated)',
     exampleSkills: 'e.g., Java, Python, SQL',
     operatingDays: 'Operating Days',
+    skills: 'Skills',
+    breakTime: 'Break Time',
+    breakHours: 'Break Hours',
+    requiredCount: 'Required Count',
+    weekends: 'Weekends',
+    shifts: 'Shifts',
 
     // Leave Management
     allLeaveRequests: 'All Leave Requests',
@@ -1554,6 +1560,12 @@ const translations = {
     requiredSkills: '必要なスキル（カンマ区切り）',
     exampleSkills: '例：Java、Python、SQL',
     operatingDays: '営業日',
+    skills: 'スキル',
+    breakTime: '休憩時間',
+    breakHours: '休憩時間（時間）',
+    requiredCount: '必要な数',
+    weekends: '週末',
+    shifts: 'シフト',
 
     // Leave Management
     allLeaveRequests: 'すべての休暇リクエスト',

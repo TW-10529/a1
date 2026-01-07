@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, AlertCircle } from 'lucide-react';
 import { createRole, listRoles, updateRole, deleteRole } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 const RoleManagement = () => {
+  const { t } = useLanguage();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showRoleForm, setShowRoleForm] = useState(false);
@@ -280,23 +282,23 @@ const RoleManagement = () => {
                               <div className="text-sm font-bold text-blue-900">{totalHours.toFixed(1)} hrs</div>
                             </div>
                             <div className="bg-orange-50 rounded p-2">
-                              <div className="text-xs text-orange-600 font-semibold">Break Time</div>
+                              <div className="text-xs text-orange-600 font-semibold">{t('breakTime')}</div>
                               <div className="text-sm font-bold text-orange-900">{breakHours.toFixed(1)} hrs</div>
                             </div>
                             <div className="bg-green-50 rounded p-2">
-                              <div className="text-xs text-green-600 font-semibold">Work Hours</div>
+                              <div className="text-xs text-green-600 font-semibold">{t('workHours')}</div>
                               <div className="text-sm font-bold text-green-900">{workHours.toFixed(1)} hrs</div>
                             </div>
                           </>
                         );
                       })()}
                       <div className="bg-cyan-50 rounded p-2">
-                        <div className="text-xs text-cyan-600 font-semibold">Required Count</div>
+                        <div className="text-xs text-cyan-600 font-semibold">{t('requiredCount')}</div>
                         <div className="text-sm font-bold text-cyan-900">{role.required_count}</div>
                       </div>
                       <div className={`rounded p-2 ${role.weekend_required ? 'bg-red-50' : 'bg-gray-50'}`}>
                         <div className={`text-xs font-semibold ${role.weekend_required ? 'text-red-600' : 'text-gray-600'}`}>
-                          Weekends
+                          {t('weekends')}
                         </div>
                         <div className={`text-sm font-bold ${role.weekend_required ? 'text-red-900' : 'text-gray-900'}`}>
                           {role.weekend_required ? 'Required' : 'Not Required'}
@@ -308,14 +310,14 @@ const RoleManagement = () => {
                       <span>{role.start_time} - {role.end_time}</span>
                       {role.required_skills && role.required_skills.length > 0 && (
                         <div className="mt-2">
-                          <span className="font-semibold">Skills:</span> {role.required_skills.join(', ')}
+                          <span className="font-semibold">{t('skills')}:</span> {role.required_skills.join(', ')}
                         </div>
                       )}
                     </div>
 
                     {role.shifts && role.shifts.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-gray-200">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3">Shifts</h4>
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3">{t('shifts')}</h4>
                         <div className="grid grid-cols-1 gap-3">
                           {role.shifts.map(shift => (
                             <div key={shift.id} className="border border-gray-200 rounded p-3 bg-gray-50">
@@ -343,7 +345,7 @@ const RoleManagement = () => {
                                         <div className="text-xs font-bold text-orange-900">{breakHours.toFixed(1)} hrs</div>
                                       </div>
                                       <div className="bg-green-100 rounded p-1.5">
-                                        <div className="text-xs text-green-700 font-semibold">Work Hours</div>
+                                        <div className="text-xs text-green-700 font-semibold">{t('workHours')}</div>
                                         <div className="text-xs font-bold text-green-900">{workHours.toFixed(1)} hrs</div>
                                       </div>
                                     </>
@@ -476,7 +478,7 @@ const RoleManagement = () => {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-1">
-                    Break Time (hrs) *
+                    {t('breakTime')} (hrs) *
                   </label>
                   <input
                     type="number"
@@ -497,7 +499,7 @@ const RoleManagement = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-1">
-                    Work Hours
+                    {t('workHours')}
                   </label>
                   <div className="px-3 py-2 border border-gray-300 rounded-lg bg-green-50 text-green-900 font-semibold">
                     {duration.work}h
@@ -505,7 +507,7 @@ const RoleManagement = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-1">
-                    Break Hours
+                    {t('breakHours')}
                   </label>
                   <div className="px-3 py-2 border border-gray-300 rounded-lg bg-orange-50 text-orange-900 font-semibold">
                     {duration.break}h

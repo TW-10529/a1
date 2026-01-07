@@ -977,7 +977,7 @@ const ManagerRoles = ({ user }) => {
                       <h3 className="font-semibold text-gray-900">{role.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{role.description}</p>
                       <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                        <span>Skills: {role.required_skills?.length || 0}</span>
+                        <span>{t('skills')}: {role.required_skills?.length || 0}</span>
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           role.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                         }`}>

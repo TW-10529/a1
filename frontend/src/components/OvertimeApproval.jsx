@@ -84,7 +84,7 @@ const OvertimeApproval = () => {
 
   const getEmployeeName = (request) => {
     // This would need to be included in the response or fetched separately
-    return `Employee ID: ${request.employee_id}`;
+    return `${t('employeeId')}: ${request.employee_id}`;
   };
 
   const isStatusPending = (status) => {
@@ -174,7 +174,7 @@ const OvertimeApproval = () => {
                         (request.status || '').toLowerCase() === 'approved' ? 'bg-green-100 text-green-800' :
                         'bg-red-100 text-red-800'
                       }`}>
-                        {(request.status || '').toUpperCase()}
+                        {t((request.status || '').toLowerCase())}
                       </span>
                       <span className="text-sm font-medium text-gray-500">
                         {new Date(request.request_date).toLocaleDateString()}
