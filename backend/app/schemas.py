@@ -215,6 +215,9 @@ class EmployeeResponse(BaseModel):
     paid_leave_per_year: int
     skills: List[str]
     is_active: bool
+    hire_date: Optional[date] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -657,6 +660,24 @@ class CompOffStatisticsResponse(BaseModel):
     total_expired: int
     current_month: str
     by_month: List[CompOffMonthlyBreakdown] = []
+
+    class Config:
+        from_attributes = True
+
+
+# Password Change
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+    confirm_password: str
+
+    class Config:
+        from_attributes = True
+
+
+class PasswordChangeResponse(BaseModel):
+    message: str
+    success: bool
 
     class Config:
         from_attributes = True

@@ -564,6 +564,69 @@ async def read_users_me(
     return current_user
 
 
+@app.get("/employee/profile", response_model=EmployeeResponse)
+async def get_employee_profile(
+    current_user: User = Depends(require_employee),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get current employee's profile information including all details"""
+    result = await db.execute(
+        select(Employee).filter(Employee.user_id == current_user.id)
+    )
+    employee = result.scalar_one_or_none()
+    
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee profile not found")
+    
+    return employee
+
+
+@app.post("/user/change-password", response_model=PasswordChangeResponse)
+async def change_password(
+    password_data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Change password for current user (employee or manager)"""
+    # Validate password confirmation
+    if password_data.new_password != password_data.confirm_password:
+        raise HTTPException(
+            status_code=400,
+            detail="New passwords do not match"
+        )
+    
+    # Validate new password is different from old password
+    if password_data.old_password == password_data.new_password:
+        raise HTTPException(
+            status_code=400,
+            detail="New password must be different from old password"
+        )
+    
+    # Validate password length
+    if len(password_data.new_password) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 6 characters long"
+        )
+    
+    # Verify old password
+    if not verify_password(password_data.old_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=401,
+            detail="Current password is incorrect"
+        )
+    
+    # Update password
+    current_user.hashed_password = get_password_hash(password_data.new_password)
+    db.add(current_user)
+    await db.commit()
+    
+    return {
+        "success": True,
+        "message": "Password changed successfully"
+    }
+
+
 # Admin: User Management
 @app.post("/admin/users", response_model=UserResponse)
 async def create_user(

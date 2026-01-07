@@ -128,6 +128,10 @@ export const rejectLeave = (leaveId, reviewNotes) => {
 export const getLeaveStatistics = () => api.get('/leave-statistics');
 export const getEmployeeLeaveStatistics = (employeeId) => api.get(`/leave-statistics/employee/${employeeId}`);
 
+// Employee Profile
+export const getEmployeeProfile = () => api.get('/employee/profile');
+export const changePassword = (passwordData) => api.post('/user/change-password', passwordData);
+
 // Comp-Off Management
 export const createCompOffRequest = (compOffData) => api.post('/comp-off-requests', compOffData);
 export const listCompOffRequests = () => api.get('/comp-off-requests');

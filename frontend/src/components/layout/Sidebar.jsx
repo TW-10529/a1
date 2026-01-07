@@ -11,7 +11,8 @@ import {
   MessageSquare,
   UserCheck,
   LogOut,
-  Gift
+  Gift,
+  User
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -39,6 +40,7 @@ const Sidebar = ({ user, onLogout }) => {
     } else {
       return [
         { path: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
+        { path: '/profile', icon: User, label: t('profile') },
         { path: '/schedule', icon: CalendarDays, label: t('mySchedule') },
         { path: '/requests', icon: ClipboardList, label: t('requestsAndApprovals') },
         { path: '/overtime-requests', icon: Clock, label: t('overtimeRequest') },
