@@ -51,7 +51,7 @@ const Login = ({ onLogin }) => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4">
             <img 
-              src="../images/ss2__1_-removebg-preview.png" 
+              src="../images/Logo.png" 
               alt="Thirdwave Group Logo"
               className="w-12 h-12 -ml-3"
             />
