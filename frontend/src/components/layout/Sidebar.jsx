@@ -11,8 +11,7 @@ import {
   MessageSquare,
   UserCheck,
   LogOut,
-  Gift,
-  User
+  Gift
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -40,7 +39,6 @@ const Sidebar = ({ user, onLogout }) => {
     } else {
       return [
         { path: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
-        { path: '/profile', icon: User, label: t('myProfile') },
         { path: '/schedule', icon: CalendarDays, label: t('mySchedule') },
         { path: '/requests', icon: ClipboardList, label: t('requestsAndApprovals') },
         { path: '/overtime-requests', icon: Clock, label: t('overtimeRequest') },
@@ -61,7 +59,7 @@ const Sidebar = ({ user, onLogout }) => {
       <div className="p-6 border-b border-gray-700">
         <div className="flex items-center gap-1 mb-2">
           <img 
-            src="../../images/Logo.png" 
+            src="../../images/ss2__1_-removebg-preview.png" 
             alt="Thirdwave Group Logo"
             className="w-10 h-10"
           />
