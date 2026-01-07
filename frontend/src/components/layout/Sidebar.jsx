@@ -58,8 +58,8 @@ const Sidebar = ({ user, onLogout }) => {
       {/* Logo */}
       <div className="p-6 border-b border-gray-700">
         <div className="flex items-center gap-1 mb-2">
-          <img 
-            src="../../images/ss2__1_-removebg-preview.png" 
+          <img
+            src="../../images/Logo.png" 
             alt="Thirdwave Group Logo"
             className="w-10 h-10"
           />
