@@ -10,6 +10,7 @@ import Modal from '../components/common/Modal';
 import CheckInOut from '../components/CheckInOut';
 import OvertimeRequest from '../components/OvertimeRequest';
 import CompOffManagement from '../components/CompOffManagement';
+import EmployeeProfilePage from './EmployeeProfile';
 import { useLanguage } from '../context/LanguageContext';
 import api, {
   listLeaveRequests,
@@ -1676,6 +1677,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
         <div className="flex-1 overflow-y-auto">
           <Routes>
             <Route path="/dashboard" element={<EmployeeDashboardHome user={user} />} />
+            <Route path="/profile" element={<EmployeeProfilePage user={user} />} />
             <Route path="/check-in" element={<EmployeeCheckIn user={user} />} />
             <Route path="/schedule" element={<EmployeeSchedule />} />
             <Route path="/leaves" element={<EmployeeLeaves user={user} />} />
