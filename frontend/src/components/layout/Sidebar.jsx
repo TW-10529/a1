@@ -57,7 +57,14 @@ const Sidebar = ({ user, onLogout }) => {
     <div className="flex flex-col h-full bg-gray-900 text-white w-64">
       {/* Logo */}
       <div className="p-6 border-b border-gray-700">
-        <h1 className="text-2xl font-bold mb-2">{t('shiftScheduler')}</h1>
+        <div className="flex items-center gap-1 mb-2">
+          <img 
+            src="../../images/ss2__1_-removebg-preview.png" 
+            alt="Thirdwave Group Logo"
+            className="w-10 h-10"
+          />
+          <h1 className="text-2xl font-bold">{t('thirdwaveGroup')}</h1>
+        </div>
         <p className="text-sm text-gray-400 mt-1">
           {user.user_type === 'admin' 
             ? t('adminPortal') 

@@ -49,7 +49,16 @@ const Login = ({ onLogin }) => {
         </div>
 
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">{t('shiftScheduler')}</h1>
+          <div className="flex items-center justify-center gap-4">
+            <img 
+              src="../images/ss2__1_-removebg-preview.png" 
+              alt="Thirdwave Group Logo"
+              className="w-12 h-12 -ml-3"
+            />
+            <div>
+              <h1 className="text-5xl font-bold text-white mb-2 -ml-3">{t('thirdwaveGroup')}</h1>
+            </div>
+          </div>
           <p className="text-blue-100">{t('employeeManagementSystem')}</p>
         </div>
 
@@ -122,7 +131,7 @@ const Login = ({ onLogin }) => {
         </Card>
 
         <p className="text-center text-white text-sm mt-6">
-          Shift Scheduler v5.1.0
+          Thirdwave v5.1.0
         </p>
       </div>
     </div>
