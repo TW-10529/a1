@@ -11,6 +11,7 @@ import RoleManagement from '../components/RoleManagement';
 import ScheduleManager from '../components/ScheduleManager';
 import OvertimeApproval from '../components/OvertimeApproval';
 import CompOffManagement from '../components/CompOffManagement';
+import ManagerProfilePage from './ManagerProfile';
 import { useLanguage } from '../context/LanguageContext';
 import api from '../services/api';
 import {
@@ -3428,6 +3429,7 @@ const ManagerDashboard = ({ user, onLogout }) => {
             <Route path="/overtime-approvals" element={<OvertimeApproval />} />
             <Route path="/attendance" element={<ManagerAttendance user={user} />} />
             <Route path="/messages" element={<ManagerMessages user={user} />} />
+            <Route path="/profile" element={<ManagerProfilePage user={user} />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </div>

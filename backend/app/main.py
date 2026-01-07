@@ -627,6 +627,37 @@ async def change_password(
     }
 
 
+@app.get("/manager/profile", response_model=ManagerProfileResponse)
+async def get_manager_profile(
+    current_user: User = Depends(require_manager),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get current manager's profile information"""
+    result = await db.execute(
+        select(Manager)
+        .options(selectinload(Manager.department), selectinload(Manager.user))
+        .filter(Manager.user_id == current_user.id)
+    )
+    manager = result.scalar_one_or_none()
+    
+    if not manager:
+        raise HTTPException(status_code=404, detail="Manager profile not found")
+    
+    return {
+        "id": manager.id,
+        "manager_id": manager.manager_id,
+        "user_id": manager.user_id,
+        "department_id": manager.department_id,
+        "username": current_user.username,
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "department_name": manager.department.name,
+        "is_active": manager.is_active,
+        "created_at": manager.created_at,
+        "updated_at": manager.updated_at
+    }
+
+
 # Admin: User Management
 @app.post("/admin/users", response_model=UserResponse)
 async def create_user(

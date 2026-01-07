@@ -130,6 +130,7 @@ export const getEmployeeLeaveStatistics = (employeeId) => api.get(`/leave-statis
 
 // Employee Profile
 export const getEmployeeProfile = () => api.get('/employee/profile');
+export const getManagerProfile = () => api.get('/manager/profile');
 export const changePassword = (passwordData) => api.post('/user/change-password', passwordData);
 
 // Comp-Off Management

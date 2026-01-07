@@ -28,6 +28,7 @@ const Sidebar = ({ user, onLogout }) => {
     } else if (user.user_type === 'manager') {
       return [
         { path: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
+        { path: '/profile', icon: User, label: t('profile') },
         { path: '/employees', icon: Users, label: t('manageEmployees') },
         { path: '/schedules', icon: CalendarDays, label: t('scheduleManagement') },
         { path: '/roles', icon: ClipboardList, label: t('roleManagement') },

@@ -683,6 +683,24 @@ class PasswordChangeResponse(BaseModel):
         from_attributes = True
 
 
+# Manager Profile
+class ManagerProfileResponse(BaseModel):
+    id: int
+    manager_id: str
+    user_id: int
+    department_id: int
+    username: str
+    email: str
+    full_name: str
+    department_name: str
+    is_active: bool
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 # Update forward references for circular dependencies
 CheckInResponse.model_rebuild()
 ScheduleResponse.model_rebuild()
